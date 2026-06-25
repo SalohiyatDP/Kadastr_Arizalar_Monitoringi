@@ -8,8 +8,6 @@
   
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Google Charts -->
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
   
   <!-- Custom styles -->
   <?!= include('style'); ?>
@@ -269,8 +267,11 @@
   <!-- Bootstrap 5 JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   
-  <!-- Custom Scripts -->
+  <!-- Custom Scripts (google.script.run ishlatiladi - Charts dan OLDIN yuklash kerak) -->
   <?!= include('script'); ?>
+  
+  <!-- Google Charts (google.script.run dan KEYIN yuklanadi) -->
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
   
   <script>
     function getMainUrl() {
@@ -308,7 +309,10 @@
      */
     document.addEventListener('DOMContentLoaded', () => {
       initReportSelects();
-      ChiefPage.init();
+      // Charts loader yuklanishi uchun qisqa kutish
+      setTimeout(() => {
+        ChiefPage.init();
+      }, 100);
     });
   </script>
 

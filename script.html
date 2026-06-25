@@ -20,21 +20,32 @@ const App = (() => {
   
   /**
    * Konfiguratsiyani yuklash
+   * google.script.run obyektini to'g'ri topish
    */
   const loadConfig = () => {
     return new Promise((resolve, reject) => {
-      google.script.run
-        .withSuccessHandler((response) => {
-          const result = JSON.parse(response);
-          if (result.success) {
-            _config = result.data;
-            resolve(_config);
-          } else {
-            reject(result.message);
-          }
-        })
-        .withFailureHandler(reject)
-        .apiGetConfig();
+      try {
+        google.script.run
+          .withSuccessHandler((response) => {
+            try {
+              const result = JSON.parse(response);
+              if (result.success) {
+                _config = result.data;
+                resolve(_config);
+              } else {
+                reject(result.message);
+              }
+            } catch (e) {
+              reject('Config javobini parse qilishda xatolik: ' + e.message);
+            }
+          })
+          .withFailureHandler((error) => {
+            reject('Server xatoligi: ' + (error.message || error));
+          })
+          .apiGetConfig();
+      } catch (e) {
+        reject('google.script.run mavjud emas: ' + e.message);
+      }
     });
   };
   
@@ -56,30 +67,33 @@ const API = (() => {
   
   /**
    * Umumiy API so'rov wrapper
+   * google.script.run orqali backend funksiyalarni chaqirish
    * @param {string} functionName - Backend funksiya nomi
    * @param {Array} args - Argumentlar
    * @returns {Promise}
    */
   const call = (functionName, ...args) => {
     return new Promise((resolve, reject) => {
-      Loading.show();
-      const handler = google.script.run
-        .withSuccessHandler((response) => {
-          Loading.hide();
-          try {
-            const result = JSON.parse(response);
-            resolve(result);
-          } catch (e) {
-            reject('Javobni o\'qishda xatolik');
-          }
-        })
-        .withFailureHandler((error) => {
-          Loading.hide();
-          reject(error.message || 'Server xatoligi');
-        });
-      
-      // Funksiyani argumentlar bilan chaqirish
-      handler[functionName](...args);
+      try {
+        Loading.show();
+        google.script.run
+          .withSuccessHandler((response) => {
+            Loading.hide();
+            try {
+              const result = JSON.parse(response);
+              resolve(result);
+            } catch (e) {
+              reject('Javobni o\'qishda xatolik: ' + e.message);
+            }
+          })
+          .withFailureHandler((error) => {
+            Loading.hide();
+            reject(error.message || 'Server xatoligi');
+          })[functionName](...args);
+      } catch (e) {
+        Loading.hide();
+        reject('API chaqiruvda xatolik (' + functionName + '): ' + e.message);
+      }
     });
   };
   
@@ -702,8 +716,20 @@ const EngineerPage = (() => {
       return;
     }
     
+    // Muddati kam arizalardan boshlab saralash
+    const sorted = [...arizalar].sort((a, b) => {
+      // Jarayondagi arizalar birinchi
+      if (a.holati === 'Jarayonda' && b.holati !== 'Jarayonda') return -1;
+      if (a.holati !== 'Jarayonda' && b.holati === 'Jarayonda') return 1;
+      // Jarayondagilar orasida qolganKun bo'yicha (kamidan ko'pga)
+      if (a.holati === 'Jarayonda' && b.holati === 'Jarayonda') {
+        return (parseInt(a.qolganKun) || 0) - (parseInt(b.qolganKun) || 0);
+      }
+      return 0;
+    });
+    
     let html = '';
-    arizalar.forEach((ariza) => {
+    sorted.forEach((ariza) => {
       html += `
         <tr class="animate-fadeIn">
           <td><strong>${ariza.arizaRaqami}</strong></td>
@@ -739,15 +765,33 @@ const ChiefPage = (() => {
   
   /**
    * Sahifani ishga tushirish
+   * Har bir bosqich alohida try/catch bilan - biri xato bo'lsa boshqasi ishlaydi
    */
   const init = async () => {
     try {
       await App.loadConfig();
+    } catch (e) {
+      console.error('Config xatolik:', e);
+    }
+    
+    try {
       await loadXodimlarFilter();
+    } catch (e) {
+      console.error('Filter xatolik:', e);
+    }
+    
+    try {
       await refreshAll();
-      await loadCharts();
-    } catch (error) {
-      Toast.error('Sahifani yuklashda xatolik: ' + error);
+    } catch (e) {
+      console.error('Refresh xatolik:', e);
+      Toast.error('Ma\'lumotlarni yuklashda xatolik: ' + e);
+    }
+    
+    // Charts alohida - asosiy funksionallikka ta'sir qilmaydi
+    try {
+      loadCharts();
+    } catch (e) {
+      console.error('Charts xatolik:', e);
     }
   };
   
@@ -1033,24 +1077,33 @@ const ChiefPage = (() => {
   };
   
   /**
-   * Google Charts yuklash
+   * Google Charts yuklash (xavfsiz - google.charts mavjudligini tekshiradi)
    */
   const loadCharts = async () => {
     try {
+      // Google Charts mavjudligini tekshirish
+      if (typeof google === 'undefined' || !google.charts) {
+        console.warn('Google Charts yuklanmagan');
+        return;
+      }
+      
       const result = await API.getChartsData();
       if (!result.success) return;
       
-      const data = result.data;
+      const chartData = result.data;
       
-      // Google Charts yuklash
       google.charts.load('current', {packages: ['corechart']});
       google.charts.setOnLoadCallback(() => {
-        drawPieChart(data.pie);
-        drawColumnChart(data.column);
-        drawLineChart(data.line);
+        try {
+          drawPieChart(chartData.pie);
+          drawColumnChart(chartData.column);
+          drawLineChart(chartData.line);
+        } catch (e) {
+          console.error('Charts chizishda xatolik:', e);
+        }
       });
     } catch (error) {
-      console.log('Charts xatolik:', error);
+      console.error('loadCharts xatoligi:', error);
     }
   };
   
