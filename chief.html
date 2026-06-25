@@ -104,25 +104,6 @@
     </section>
 
     <section class="mt-4">
-      <div class="table-container">
-        <div class="table-header"><span>&#128197; Oylik hisobot</span></div>
-        <div class="p-3">
-          <div class="row g-3 align-items-end mb-3">
-            <div class="col-auto"><label class="form-label small fw-semibold">Yil</label><select class="form-select form-select-sm" id="reportYear" style="width:100px"></select></div>
-            <div class="col-auto"><label class="form-label small fw-semibold">Oy</label><select class="form-select form-select-sm" id="reportMonth" style="width:140px"><option value="1">Yanvar</option><option value="2">Fevral</option><option value="3">Mart</option><option value="4">Aprel</option><option value="5">May</option><option value="6">Iyun</option><option value="7">Iyul</option><option value="8">Avgust</option><option value="9">Sentabr</option><option value="10">Oktabr</option><option value="11">Noyabr</option><option value="12">Dekabr</option></select></div>
-            <div class="col-auto"><button class="btn btn-primary btn-sm" id="btnMonthly">Ko'rsatish</button></div>
-          </div>
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead><tr><th>Muhandis</th><th>Kelgan</th><th>Yakunlangan</th><th>Rad etilgan</th><th>Jarayonda</th><th>Bajarilish %</th></tr></thead>
-              <tbody id="monthlyReportBody"><tr><td colspan="6" class="text-center py-3 text-muted">Oy tanlang</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="mt-4">
       <div class="filter-section">
         <h6 class="fw-bold mb-3">&#128270; Filtrlar</h6>
         <div class="row g-2 align-items-end">
@@ -142,15 +123,6 @@
             <tbody id="allArizalarBody"><tr><td colspan="10" class="text-center py-3 text-muted">Filtrlang</td></tr></tbody>
           </table>
         </div>
-      </div>
-    </section>
-
-    <section class="mt-4">
-      <h5 class="fw-bold mb-3">&#128202; Diagrammalar</h5>
-      <div class="row g-3">
-        <div class="col-md-6"><div class="chart-container"><div class="chart-title">Muddat bo'yicha</div><div id="pieChart" style="width:100%;height:300px"></div></div></div>
-        <div class="col-md-6"><div class="chart-container"><div class="chart-title">Muhandislar bo'yicha</div><div id="columnChart" style="width:100%;height:300px"></div></div></div>
-        <div class="col-12"><div class="chart-container"><div class="chart-title">Oylik statistika</div><div id="lineChart" style="width:100%;height:350px"></div></div></div>
       </div>
     </section>
 
@@ -185,7 +157,6 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script>
@@ -277,19 +248,6 @@
       t.innerHTML = h;
     }
 
-    function renderMonthly(data) {
-      var t = document.getElementById('monthlyReportBody');
-      if (!t) return;
-      if (!data.engineers || !data.engineers.length) { t.innerHTML = '<tr><td colspan="6" class="text-center py-3">Ma\'lumot yo\'q</td></tr>'; return; }
-      var h = '';
-      for (var i = 0; i < data.engineers.length; i++) {
-        var e = data.engineers[i];
-        h += '<tr><td>'+e.muhandis+'</td><td>'+e.kelgan+'</td><td>'+e.yakunlangan+'</td><td>'+e.radEtilgan+'</td><td>'+e.jarayonda+'</td><td><div class="progress" style="height:20px;border-radius:10px"><div class="progress-bar bg-success" style="width:'+e.foiz+'%">'+e.foiz+'%</div></div></td></tr>';
-      }
-      h += '<tr class="table-active fw-bold"><td>JAMI</td><td>'+data.totals.kelgan+'</td><td>'+data.totals.yakunlangan+'</td><td>'+data.totals.radEtilgan+'</td><td>'+data.totals.jarayonda+'</td><td><div class="progress" style="height:20px;border-radius:10px"><div class="progress-bar bg-primary" style="width:'+data.totals.foiz+'%">'+data.totals.foiz+'%</div></div></td></tr>';
-      t.innerHTML = h;
-    }
-
     function renderArizalar(arr) {
       var t = document.getElementById('allArizalarBody');
       if (!t) return;
@@ -320,12 +278,6 @@
       });
     }
 
-    function doMonthly() {
-      var y = parseInt(document.getElementById('reportYear').value) || new Date().getFullYear();
-      var m = parseInt(document.getElementById('reportMonth').value) || (new Date().getMonth()+1);
-      api('apiGetMonthlyReport', [y, m], function(r) { if (r.success) renderMonthly(r.data); });
-    }
-
     function doFilter() {
       var f = {
         muhandis: document.getElementById('filterMuhandis').value,
@@ -344,22 +296,6 @@
       document.getElementById('filterSanaTo').value = '';
       document.getElementById('filterQidiruv').value = '';
       doFilter();
-    }
-
-    function loadCharts() {
-      if (typeof google === 'undefined' || !google.charts) { setTimeout(loadCharts, 500); return; }
-      api('apiGetChartsData', [], function(r) {
-        if (!r.success) return;
-        var cd = r.data;
-        google.charts.load('current', {packages:['corechart']});
-        google.charts.setOnLoadCallback(function() {
-          try {
-            if (cd.pie && cd.pie.length > 1) { var d = google.visualization.arrayToDataTable(cd.pie); new google.visualization.PieChart(document.getElementById('pieChart')).draw(d, {pieHole:0.4,colors:['#28a745','#007bff','#ffc107','#fd7e14','#dc3545','#721c24'],legend:{position:'bottom'},chartArea:{width:'90%',height:'75%'}}); }
-            if (cd.column && cd.column.length > 1) { var d2 = google.visualization.arrayToDataTable(cd.column); new google.visualization.ColumnChart(document.getElementById('columnChart')).draw(d2, {colors:['#007bff','#28a745','#6c757d'],legend:{position:'bottom'},chartArea:{width:'85%',height:'70%'},vAxis:{minValue:0}}); }
-            if (cd.line && cd.line.length > 1) { var d3 = google.visualization.arrayToDataTable(cd.line); new google.visualization.LineChart(document.getElementById('lineChart')).draw(d3, {colors:['#1a237e','#28a745','#dc3545'],legend:{position:'bottom'},chartArea:{width:'85%',height:'70%'},curveType:'function',pointSize:5}); }
-          } catch(e) { console.error(e); }
-        });
-      });
     }
 
     // ==================== ARXIV ====================
@@ -492,7 +428,6 @@
       document.getElementById('btnRefresh').onclick = function() { loadStats(); loadSummary(); };
       var btnExp = document.getElementById('btnExportJpg');
       if (btnExp) btnExp.onclick = exportSummaryJpg;
-      document.getElementById('btnMonthly').onclick = doMonthly;
       document.getElementById('btnFilter').onclick = doFilter;
       document.getElementById('btnClear').onclick = doClear;
 
@@ -505,17 +440,12 @@
       document.getElementById('btnArxivRefresh').onclick = function() { loadArxiv({}); loadArxivStats(); };
       document.getElementById('btnArchiveNow').onclick = doArchiveNow;
 
-      var ys = document.getElementById('reportYear'), cy = new Date().getFullYear();
-      for (var y = cy-2; y <= cy+1; y++) { var o = document.createElement('option'); o.value = y; o.text = y; if (y===cy) o.selected=true; ys.appendChild(o); }
-      document.getElementById('reportMonth').value = new Date().getMonth()+1;
-
       loadFilter();
       loadArxivFilter();
       loadStats();
       loadSummary();
       loadArxiv({});
       loadArxivStats();
-      setTimeout(loadCharts, 500);
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
