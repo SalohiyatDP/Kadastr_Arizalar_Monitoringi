@@ -528,6 +528,9 @@ const EngineerPage = (() => {
       if (result.success) {
         Toast.success(`Ariza muvaffaqiyatli kiritildi! Muddat: ${result.data.muddat} ish kuni`);
         UI.resetForm('arizaForm');
+        // Muhandis maydonini qayta tiklash (reset uni tozalab yuboradi)
+        const formInput = document.getElementById('formMuhandis');
+        if (formInput) formInput.value = App.getCurrentEngineer();
         setupBugunCheckbox();
         await refreshDashboard();
       } else {
