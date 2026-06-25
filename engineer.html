@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Muhandis Dashboard - Arizalar nazorati</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Custom styles -->
+  <?!= include('style'); ?>
+</head>
+<body>
+
+  <!-- ============================================================ -->
+  <!-- HEADER -->
+  <!-- ============================================================ -->
+  <header class="app-header">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <div class="header-logo me-3">&#128119;</div>
+        <div>
+          <h1>Muhandis paneli</h1>
+          <div class="subtitle" id="engineerNameHeader">Arizalar nazorati</div>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-chief" onclick="window.open(getChiefUrl(), '_top')">
+          &#128200; Bosh muhandis
+        </button>
+        <button class="btn btn-back" onclick="window.open(getMainUrl(), '_top')">
+          &#8592; Orqaga
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================================ -->
+  <main class="main-container">
+    
+    <!-- Muhandis tanlash -->
+    <div class="row justify-content-center mb-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="form-section p-3">
+          <label class="form-label fw-semibold">Muhandis</label>
+          <select class="form-select" id="muhandisSelect" onchange="EngineerPage.onEngineerSelect()">
+            <option value="">-- Muhandisni tanlang --</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" style="display:none">
+      
+      <!-- Statistik kartochkalar -->
+      <div class="row g-3" id="statsCards">
+      </div>
+
+      <!-- Ariza kiritish formasi -->
+      <div id="formSection" class="mt-4">
+        <div class="form-section animate-slideDown">
+          <div class="section-title">&#128221; Yangi ariza kiritish</div>
+          
+          <form id="arizaForm" onsubmit="event.preventDefault(); EngineerPage.submitForm();">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Ariza raqami <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="arizaRaqami" 
+                       placeholder="Ariza raqamini kiriting" required
+                       onblur="EngineerPage.checkDuplicate()">
+                <div class="invalid-feedback">Bu ariza raqami allaqachon mavjud!</div>
+              </div>
+              
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Kelgan sana <span class="text-danger">*</span></label>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="bugunCheckbox" checked>
+                    <label class="form-check-label" for="bugunCheckbox">Bugun</label>
+                  </div>
+                  <input type="date" class="form-control" id="kelganSana" required disabled>
+                </div>
+              </div>
+              
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Obyekt turi <span class="text-danger">*</span></label>
+                <div class="d-flex gap-2 mt-1">
+                  <div class="form-check-custom">
+                    <input class="form-check-input me-1" type="radio" name="obyektTuri" 
+                           id="obyektTurar" value="Turar">
+                    <label class="form-check-label" for="obyektTurar">Turar</label>
+                  </div>
+                  <div class="form-check-custom">
+                    <input class="form-check-input me-1" type="radio" name="obyektTuri" 
+                           id="obyektNoturar" value="Noturar">
+                    <label class="form-check-label" for="obyektNoturar">Noturar</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Xizmat turi <span class="text-danger">*</span></label>
+                <div class="d-flex gap-2 mt-1">
+                  <div class="form-check-custom">
+                    <input class="form-check-input me-1" type="radio" name="xizmatTuri" 
+                           id="xizmatTolovli" value="Tolovli">
+                    <label class="form-check-label" for="xizmatTolovli">To'lovli</label>
+                  </div>
+                  <div class="form-check-custom">
+                    <input class="form-check-input me-1" type="radio" name="xizmatTuri" 
+                           id="xizmatBepul" value="Bepul">
+                    <label class="form-check-label" for="xizmatBepul">Bepul</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                  &#10004; ARIZA KIRITISH
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+
+      <!-- Arizalar jadvali -->
+      <div class="table-container">
+        <div class="table-header d-flex justify-content-between align-items-center">
+          <span>&#128203; Mening arizalarim</span>
+          <button class="btn btn-sm btn-light" onclick="EngineerPage.refreshDashboard()">
+            &#128260; Yangilash
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ariza raqami</th>
+                <th>Kelgan sana</th>
+                <th>Obyekt turi</th>
+                <th>Xizmat turi</th>
+                <th>Muddat</th>
+                <th>Tugash sanasi</th>
+                <th>Qolgan kun</th>
+                <th>Holati</th>
+                <th>Amallar</th>
+              </tr>
+            </thead>
+            <tbody id="arizalarTableBody">
+              <tr>
+                <td colspan="9" class="text-center py-4">
+                  <div class="empty-state">
+                    <div style="font-size:2.5rem; opacity:0.3">&#128196;</div>
+                    <p class="mt-2 mb-0">Arizalar topilmadi</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- RAD ETISH MODAL -->
+  <!-- ============================================================ -->
+  <div class="modal fade" id="radModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:12px; overflow:hidden">
+        <div class="modal-header" style="background:linear-gradient(135deg,#dc3545,#c82333); color:#fff">
+          <h5 class="modal-title">&#9888; Arizani rad etish</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="radArizaId">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Rad etish sababi (ixtiyoriy)</label>
+            <textarea class="form-control" id="radSababi" rows="3" 
+                      placeholder="Rad etish sababini yozing..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+          <button type="button" class="btn btn-danger" onclick="EngineerPage.confirmRadEtish()">
+            &#10006; Rad etish
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Custom Scripts -->
+  <?!= include('script'); ?>
+  
+  <script>
+    function getChiefUrl() {
+      const baseUrl = window.location.href.split('?')[0];
+      return baseUrl + '?page=chief';
+    }
+    
+    function getMainUrl() {
+      return window.location.href.split('?')[0];
+    }
+    
+    // Muhandis tanlanganda header yangilash
+    const _origSelect = EngineerPage.onEngineerSelect;
+    EngineerPage.onEngineerSelect = async function() {
+      const select = document.getElementById('muhandisSelect');
+      const header = document.getElementById('engineerNameHeader');
+      if (header && select && select.value) {
+        header.textContent = select.value;
+      }
+      await _origSelect();
+    };
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      EngineerPage.init();
+    });
+  </script>
+
+</body>
+</html>

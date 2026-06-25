@@ -1,0 +1,1126 @@
+<script>
+/**
+ * script.html - Frontend JavaScript moduli
+ * Davlat kadastrlari palatasi - Arizalar nazorati tizimi
+ * 
+ * AJAX so'rovlar, DOM manipulatsiya, Google Charts,
+ * Toast xabarnomalar, Loading animatsiya
+ * ES6 modul ko'rinishida yozilgan
+ */
+
+// ============================================================
+// APP MODULE - Asosiy dastur moduli
+// ============================================================
+const App = (() => {
+  'use strict';
+  
+  // Private o'zgaruvchilar
+  let _currentEngineer = '';
+  let _config = null;
+  
+  /**
+   * Konfiguratsiyani yuklash
+   */
+  const loadConfig = () => {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler((response) => {
+          const result = JSON.parse(response);
+          if (result.success) {
+            _config = result.data;
+            resolve(_config);
+          } else {
+            reject(result.message);
+          }
+        })
+        .withFailureHandler(reject)
+        .apiGetConfig();
+    });
+  };
+  
+  /**
+   * Joriy muhandisni olish/o'rnatish
+   */
+  const setCurrentEngineer = (name) => { _currentEngineer = name; };
+  const getCurrentEngineer = () => _currentEngineer;
+  const getConfig = () => _config;
+  
+  return { loadConfig, setCurrentEngineer, getCurrentEngineer, getConfig };
+})();
+
+// ============================================================
+// API MODULE - Backend bilan aloqa
+// ============================================================
+const API = (() => {
+  'use strict';
+  
+  /**
+   * Umumiy API so'rov wrapper
+   * @param {string} functionName - Backend funksiya nomi
+   * @param {Array} args - Argumentlar
+   * @returns {Promise}
+   */
+  const call = (functionName, ...args) => {
+    return new Promise((resolve, reject) => {
+      Loading.show();
+      const handler = google.script.run
+        .withSuccessHandler((response) => {
+          Loading.hide();
+          try {
+            const result = JSON.parse(response);
+            resolve(result);
+          } catch (e) {
+            reject('Javobni o\'qishda xatolik');
+          }
+        })
+        .withFailureHandler((error) => {
+          Loading.hide();
+          reject(error.message || 'Server xatoligi');
+        });
+      
+      // Funksiyani argumentlar bilan chaqirish
+      handler[functionName](...args);
+    });
+  };
+  
+  // API funksiyalari
+  const getXodimlar = () => call('apiGetXodimlar');
+  const submitAriza = (data) => call('apiSubmitAriza', data);
+  const checkArizaRaqami = (raqam) => call('apiCheckArizaRaqami', raqam);
+  const getEngineerArizalar = (muhandis) => call('apiGetEngineerArizalar', muhandis);
+  const getEngineerStats = (muhandis) => call('apiGetEngineerStats', muhandis);
+  const yakunlash = (id, muhandis) => call('apiYakunlash', id, muhandis);
+  const radEtish = (id, muhandis, sabab) => call('apiRadEtish', id, muhandis, sabab);
+  const getChiefStats = () => call('apiGetChiefStats');
+  const getEngineersSummary = () => call('apiGetEngineersSummary');
+  const getMonthlyReport = (year, month) => call('apiGetMonthlyReport', year, month);
+  const getAllArizalar = (filters) => call('apiGetAllArizalar', filters);
+  const getChartsData = () => call('apiGetChartsData');
+  const getDetailedReport = (from, to) => call('apiGetDetailedReport', from, to);
+  const getLog = (limit) => call('apiGetLog', limit);
+  const getOverdueArizalar = () => call('apiGetOverdueArizalar');
+  
+  return {
+    getXodimlar, submitAriza, checkArizaRaqami,
+    getEngineerArizalar, getEngineerStats,
+    yakunlash, radEtish,
+    getChiefStats, getEngineersSummary,
+    getMonthlyReport, getAllArizalar,
+    getChartsData, getDetailedReport,
+    getLog, getOverdueArizalar
+  };
+})();
+</script>
+
+
+<script>
+// ============================================================
+// LOADING MODULE - Yuklanish animatsiyasi
+// ============================================================
+const Loading = (() => {
+  'use strict';
+  
+  let _overlay = null;
+  let _counter = 0;
+  
+  /**
+   * Loading overlay yaratish
+   */
+  const _createOverlay = () => {
+    if (!_overlay) {
+      _overlay = document.createElement('div');
+      _overlay.className = 'loading-overlay';
+      _overlay.id = 'loadingOverlay';
+      _overlay.innerHTML = '<div class="loading-spinner"></div>';
+      _overlay.style.display = 'none';
+      document.body.appendChild(_overlay);
+    }
+  };
+  
+  /**
+   * Loading ko'rsatish
+   */
+  const show = () => {
+    _createOverlay();
+    _counter++;
+    _overlay.style.display = 'flex';
+  };
+  
+  /**
+   * Loading yashirish
+   */
+  const hide = () => {
+    _counter = Math.max(0, _counter - 1);
+    if (_counter === 0 && _overlay) {
+      _overlay.style.display = 'none';
+    }
+  };
+  
+  /**
+   * Majburiy yashirish
+   */
+  const forceHide = () => {
+    _counter = 0;
+    if (_overlay) _overlay.style.display = 'none';
+  };
+  
+  return { show, hide, forceHide };
+})();
+
+// ============================================================
+// TOAST MODULE - Xabarnomalar
+// ============================================================
+const Toast = (() => {
+  'use strict';
+  
+  let _container = null;
+  
+  /**
+   * Container yaratish
+   */
+  const _createContainer = () => {
+    if (!_container) {
+      _container = document.createElement('div');
+      _container.className = 'toast-container';
+      _container.id = 'toastContainer';
+      document.body.appendChild(_container);
+    }
+  };
+  
+  /**
+   * Toast ko'rsatish
+   * @param {string} message - Xabar
+   * @param {string} type - success/error/warning
+   * @param {number} duration - Davomiyligi (ms)
+   */
+  const show = (message, type = 'success', duration = 4000) => {
+    _createContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `custom-toast toast-${type} animate-fadeInUp`;
+    
+    const icon = type === 'success' ? '&#10004;' : type === 'error' ? '&#10006;' : '&#9888;';
+    const title = type === 'success' ? 'Muvaffaqiyat' : type === 'error' ? 'Xatolik' : 'Ogohlantirish';
+    
+    toast.innerHTML = `
+      <div class="d-flex align-items-center p-3">
+        <span class="me-2" style="font-size:1.2rem">${icon}</span>
+        <div>
+          <strong class="d-block" style="font-size:0.85rem">${title}</strong>
+          <span style="font-size:0.8rem">${message}</span>
+        </div>
+        <button class="btn-close ms-auto" style="font-size:0.7rem" onclick="this.closest('.custom-toast').remove()"></button>
+      </div>
+    `;
+    
+    _container.appendChild(toast);
+    
+    // Avtomatik o'chirish
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, duration);
+  };
+  
+  const success = (msg) => show(msg, 'success');
+  const error = (msg) => show(msg, 'error');
+  const warning = (msg) => show(msg, 'warning');
+  
+  return { show, success, error, warning };
+})();
+</script>
+
+
+<script>
+// ============================================================
+// UI HELPERS MODULE - UI yordamchi funksiyalar
+// ============================================================
+const UI = (() => {
+  'use strict';
+  
+  /**
+   * Qolgan kun uchun badge CSS klassini aniqlash
+   * @param {number} qolganKun - Qolgan ish kuni
+   * @param {string} holati - Ariza holati
+   * @returns {string} CSS klass nomi
+   */
+  const getKunBadgeClass = (qolganKun, holati) => {
+    if (holati === 'Yakunlandi') return 'badge-yakunlangan';
+    if (holati === 'Rad etildi') return 'badge-rad';
+    
+    const kun = parseInt(qolganKun);
+    if (kun < 0) return 'badge-kun-otgan';
+    if (kun === 0) return 'badge-kun-0';
+    if (kun === 1) return 'badge-kun-1';
+    if (kun === 2) return 'badge-kun-2';
+    if (kun === 3) return 'badge-kun-3';
+    return 'badge-kun-4plus';
+  };
+  
+  /**
+   * Holat badge HTML
+   * @param {string} holati - Holat nomi
+   * @returns {string} HTML
+   */
+  const getHolatBadge = (holati) => {
+    let cls = 'badge-jarayonda';
+    if (holati === 'Yakunlandi') cls = 'badge-yakunlangan';
+    else if (holati === 'Rad etildi') cls = 'badge-rad';
+    return `<span class="badge-holat ${cls}">${holati}</span>`;
+  };
+  
+  /**
+   * Qolgan kun badge HTML
+   * @param {number} qolganKun - Qolgan ish kuni
+   * @param {string} holati - Holat
+   * @returns {string} HTML
+   */
+  const getKunBadge = (qolganKun, holati) => {
+    if (holati !== 'Jarayonda') return '-';
+    const cls = getKunBadgeClass(qolganKun, holati);
+    const text = qolganKun < 0 ? qolganKun + ' kun' : qolganKun + ' kun';
+    return `<span class="badge-kun ${cls}">${text}</span>`;
+  };
+  
+  /**
+   * Amallar tugmalari HTML
+   * @param {number} id - Ariza ID
+   * @param {string} holati - Holat
+   * @returns {string} HTML
+   */
+  const getActionButtons = (id, holati) => {
+    if (holati !== 'Jarayonda') return '<span class="text-muted">-</span>';
+    return `
+      <button class="btn-yakunlash" onclick="EngineerPage.yakunlash(${id})" title="Yakunlash">
+        &#x1F7E2; Yakunlandi
+      </button>
+      <button class="btn-rad" onclick="EngineerPage.radEtishModal(${id})" title="Rad etish">
+        &#x1F534; Rad etildi
+      </button>
+    `;
+  };
+  
+  /**
+   * Formani tozalash
+   * @param {string} formId - Form ID
+   */
+  const resetForm = (formId) => {
+    const form = document.getElementById(formId);
+    if (form) form.reset();
+  };
+  
+  /**
+   * Elementni ko'rsatish/yashirish
+   * @param {string} id - Element ID
+   * @param {boolean} show - Ko'rsatish
+   * @param {string} animClass - Animatsiya klassi
+   */
+  const toggleElement = (id, show, animClass = 'animate-slideDown') => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    if (show) {
+      el.style.display = '';
+      el.classList.add(animClass);
+    } else {
+      el.style.display = 'none';
+      el.classList.remove(animClass);
+    }
+  };
+  
+  /**
+   * Sana inputini bugungi sana bilan to'ldirish
+   * @param {string} inputId - Input ID
+   */
+  const setTodayDate = (inputId) => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      input.value = `${yyyy}-${mm}-${dd}`;
+    }
+  };
+  
+  /**
+   * Bugungi sanani dd.MM.yyyy formatda olish
+   * @returns {string}
+   */
+  const getTodayFormatted = () => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    return `${dd}.${mm}.${yyyy}`;
+  };
+  
+  /**
+   * yyyy-MM-dd ni dd.MM.yyyy formatga aylantirish
+   * @param {string} dateStr - yyyy-MM-dd format
+   * @returns {string} dd.MM.yyyy format
+   */
+  const convertDateFormat = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  };
+  
+  return {
+    getKunBadgeClass, getHolatBadge, getKunBadge,
+    getActionButtons, resetForm, toggleElement,
+    setTodayDate, getTodayFormatted, convertDateFormat
+  };
+})();
+</script>
+
+
+<script>
+// ============================================================
+// ENGINEER PAGE MODULE - Muhandis sahifasi logikasi
+// ============================================================
+const EngineerPage = (() => {
+  'use strict';
+  
+  /**
+   * Sahifani ishga tushirish
+   */
+  const init = async () => {
+    try {
+      await App.loadConfig();
+      await loadXodimlar();
+      setupBugunCheckbox();
+    } catch (error) {
+      Toast.error('Sahifani yuklashda xatolik: ' + error);
+    }
+  };
+  
+  /**
+   * Xodimlar dropdownini to'ldirish
+   */
+  const loadXodimlar = async () => {
+    try {
+      const result = await API.getXodimlar();
+      if (result.success) {
+        const select = document.getElementById('muhandisSelect');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">-- Muhandisni tanlang --</option>';
+        result.data.forEach((x) => {
+          const opt = document.createElement('option');
+          opt.value = x.fish;
+          opt.textContent = x.fish;
+          select.appendChild(opt);
+        });
+      }
+    } catch (error) {
+      Toast.error('Xodimlar ro\'yxatini yuklashda xatolik');
+    }
+  };
+  
+  /**
+   * Muhandis tanlanganda
+   */
+  const onEngineerSelect = async () => {
+    const select = document.getElementById('muhandisSelect');
+    const engineer = select ? select.value : '';
+    
+    if (!engineer) {
+      UI.toggleElement('formSection', false);
+      UI.toggleElement('dashboardSection', false);
+      App.setCurrentEngineer('');
+      return;
+    }
+    
+    App.setCurrentEngineer(engineer);
+    
+    // Forma va dashboardni ko'rsatish
+    UI.toggleElement('formSection', true);
+    UI.toggleElement('dashboardSection', true);
+    
+    // Ma'lumotlarni yuklash
+    await refreshDashboard();
+  };
+  
+  /**
+   * Bugun checkbox logikasi
+   */
+  const setupBugunCheckbox = () => {
+    const checkbox = document.getElementById('bugunCheckbox');
+    const dateInput = document.getElementById('kelganSana');
+    
+    if (!checkbox || !dateInput) return;
+    
+    // Default: bugun belgilangan
+    checkbox.checked = true;
+    UI.setTodayDate('kelganSana');
+    dateInput.disabled = true;
+    
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        UI.setTodayDate('kelganSana');
+        dateInput.disabled = true;
+      } else {
+        dateInput.disabled = false;
+        dateInput.focus();
+      }
+    });
+  };
+  
+  /**
+   * Ariza kiritish
+   */
+  const submitForm = async () => {
+    try {
+      const muhandis = App.getCurrentEngineer();
+      if (!muhandis) {
+        Toast.warning('Avval muhandisni tanlang');
+        return;
+      }
+      
+      const arizaRaqami = document.getElementById('arizaRaqami')?.value?.trim();
+      const kelganSanaRaw = document.getElementById('kelganSana')?.value;
+      const obyektTuri = document.querySelector('input[name="obyektTuri"]:checked')?.value;
+      const xizmatTuri = document.querySelector('input[name="xizmatTuri"]:checked')?.value;
+      
+      // Validatsiya
+      if (!arizaRaqami) { Toast.warning('Ariza raqamini kiriting'); return; }
+      if (!kelganSanaRaw) { Toast.warning('Kelgan sanani tanlang'); return; }
+      if (!obyektTuri) { Toast.warning('Obyekt turini tanlang'); return; }
+      if (!xizmatTuri) { Toast.warning('Xizmat turini tanlang'); return; }
+      
+      // Sana formatini o'zgartirish (yyyy-MM-dd -> dd.MM.yyyy)
+      const kelganSana = UI.convertDateFormat(kelganSanaRaw);
+      
+      const formData = {
+        muhandis: muhandis,
+        arizaRaqami: arizaRaqami,
+        kelganSana: kelganSana,
+        obyektTuri: obyektTuri,
+        xizmatTuri: xizmatTuri
+      };
+      
+      const result = await API.submitAriza(formData);
+      
+      if (result.success) {
+        Toast.success(`Ariza muvaffaqiyatli kiritildi! Muddat: ${result.data.muddat} ish kuni`);
+        UI.resetForm('arizaForm');
+        setupBugunCheckbox();
+        await refreshDashboard();
+      } else {
+        Toast.error(result.message);
+      }
+    } catch (error) {
+      Toast.error('Ariza kiritishda xatolik: ' + error);
+    }
+  };
+  
+  /**
+   * Ariza raqamini tekshirish (blur event)
+   */
+  const checkDuplicate = async () => {
+    const input = document.getElementById('arizaRaqami');
+    if (!input || !input.value.trim()) return;
+    
+    try {
+      const result = await API.checkArizaRaqami(input.value.trim());
+      if (result.success && !result.data.unique) {
+        Toast.warning('Bu ariza raqami allaqachon mavjud!');
+        input.classList.add('is-invalid');
+      } else {
+        input.classList.remove('is-invalid');
+      }
+    } catch (error) {
+      // Silent fail
+    }
+  };
+  
+  /**
+   * Arizani yakunlash
+   * @param {number} id - Ariza ID
+   */
+  const yakunlash = async (id) => {
+    if (!confirm('Arizani yakunlashni tasdiqlaysizmi?')) return;
+    
+    try {
+      const result = await API.yakunlash(id, App.getCurrentEngineer());
+      if (result.success) {
+        Toast.success('Ariza muvaffaqiyatli yakunlandi');
+        await refreshDashboard();
+      } else {
+        Toast.error(result.message);
+      }
+    } catch (error) {
+      Toast.error('Xatolik: ' + error);
+    }
+  };
+  
+  /**
+   * Rad etish modali
+   * @param {number} id - Ariza ID
+   */
+  const radEtishModal = (id) => {
+    const modal = document.getElementById('radModal');
+    if (!modal) return;
+    
+    document.getElementById('radArizaId').value = id;
+    document.getElementById('radSababi').value = '';
+    
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+  };
+  
+  /**
+   * Rad etishni tasdiqlash
+   */
+  const confirmRadEtish = async () => {
+    const id = parseInt(document.getElementById('radArizaId')?.value);
+    const sabab = document.getElementById('radSababi')?.value?.trim() || '';
+    
+    if (!id) return;
+    
+    try {
+      const result = await API.radEtish(id, App.getCurrentEngineer(), sabab);
+      if (result.success) {
+        Toast.success('Ariza rad etildi');
+        // Modalni yopish
+        const modal = bootstrap.Modal.getInstance(document.getElementById('radModal'));
+        if (modal) modal.hide();
+        await refreshDashboard();
+      } else {
+        Toast.error(result.message);
+      }
+    } catch (error) {
+      Toast.error('Xatolik: ' + error);
+    }
+  };
+  
+  /**
+   * Dashboard yangilash (statistika + jadval)
+   */
+  const refreshDashboard = async () => {
+    const muhandis = App.getCurrentEngineer();
+    if (!muhandis) return;
+    
+    try {
+      // Parallel yuklash
+      const [statsResult, arizalarResult] = await Promise.all([
+        API.getEngineerStats(muhandis),
+        API.getEngineerArizalar(muhandis)
+      ]);
+      
+      if (statsResult.success) {
+        renderStats(statsResult.data);
+      }
+      
+      if (arizalarResult.success) {
+        renderTable(arizalarResult.data);
+      }
+    } catch (error) {
+      Toast.error('Ma\'lumotlarni yangilashda xatolik');
+    }
+  };
+  
+  /**
+   * Statistika kartochkalarini render
+   * @param {Object} stats - Statistika
+   */
+  const renderStats = (stats) => {
+    const container = document.getElementById('statsCards');
+    if (!container) return;
+    
+    container.innerHTML = `
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card animate-fadeInUp">
+          <div class="stat-label">Jami ariza</div>
+          <div class="stat-value">${stats.jami}</div>
+          <div class="stat-icon">&#128203;</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card card-jarayonda animate-fadeInUp">
+          <div class="stat-label">Jarayonda</div>
+          <div class="stat-value">${stats.jarayonda}</div>
+          <div class="stat-icon">&#9203;</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card card-yakunlangan animate-fadeInUp">
+          <div class="stat-label">Yakunlangan</div>
+          <div class="stat-value">${stats.yakunlangan}</div>
+          <div class="stat-icon">&#10004;</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card card-rad animate-fadeInUp">
+          <div class="stat-label">Rad etilgan</div>
+          <div class="stat-value">${stats.radEtilgan}</div>
+          <div class="stat-icon">&#10006;</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card card-bugun animate-fadeInUp">
+          <div class="stat-label">Bugun tugaydi</div>
+          <div class="stat-value">${stats.bugunTugaydi}</div>
+          <div class="stat-icon">&#9888;</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-card card-otgan animate-fadeInUp">
+          <div class="stat-label">Muddati o'tgan</div>
+          <div class="stat-value">${stats.muddatiOtgan}</div>
+          <div class="stat-icon">&#128308;</div>
+        </div>
+      </div>
+    `;
+  };
+  
+  /**
+   * Arizalar jadvalini render
+   * @param {Array} arizalar - Arizalar ro'yxati
+   */
+  const renderTable = (arizalar) => {
+    const tbody = document.getElementById('arizalarTableBody');
+    if (!tbody) return;
+    
+    if (!arizalar || arizalar.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="text-center py-4">
+            <div class="empty-state">
+              <div style="font-size:2.5rem; opacity:0.3">&#128196;</div>
+              <p class="mt-2 mb-0">Arizalar topilmadi</p>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    let html = '';
+    arizalar.forEach((ariza) => {
+      html += `
+        <tr class="animate-fadeIn">
+          <td><strong>${ariza.arizaRaqami}</strong></td>
+          <td>${ariza.kelganSana}</td>
+          <td>${ariza.obyektTuri}</td>
+          <td>${ariza.xizmatTuri}</td>
+          <td>${ariza.muddat} kun</td>
+          <td>${ariza.tugashSanasi}</td>
+          <td>${UI.getKunBadge(ariza.qolganKun, ariza.holati)}</td>
+          <td>${UI.getHolatBadge(ariza.holati)}</td>
+          <td>${UI.getActionButtons(ariza.id, ariza.holati)}</td>
+        </tr>
+      `;
+    });
+    
+    tbody.innerHTML = html;
+  };
+  
+  return {
+    init, onEngineerSelect, submitForm, checkDuplicate,
+    yakunlash, radEtishModal, confirmRadEtish, refreshDashboard
+  };
+})();
+</script>
+
+
+<script>
+// ============================================================
+// CHIEF PAGE MODULE - Bosh muhandis sahifasi logikasi
+// ============================================================
+const ChiefPage = (() => {
+  'use strict';
+  
+  /**
+   * Sahifani ishga tushirish
+   */
+  const init = async () => {
+    try {
+      await App.loadConfig();
+      await loadXodimlarFilter();
+      await refreshAll();
+      await loadCharts();
+    } catch (error) {
+      Toast.error('Sahifani yuklashda xatolik: ' + error);
+    }
+  };
+  
+  /**
+   * Muhandis filtrini to'ldirish
+   */
+  const loadXodimlarFilter = async () => {
+    try {
+      const result = await API.getXodimlar();
+      if (result.success) {
+        const select = document.getElementById('filterMuhandis');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Barchasi</option>';
+        result.data.forEach((x) => {
+          const opt = document.createElement('option');
+          opt.value = x.fish;
+          opt.textContent = x.fish;
+          select.appendChild(opt);
+        });
+      }
+    } catch (error) {
+      // Silent
+    }
+  };
+  
+  /**
+   * Barcha ma'lumotlarni yangilash
+   */
+  const refreshAll = async () => {
+    try {
+      const [statsResult, summaryResult] = await Promise.all([
+        API.getChiefStats(),
+        API.getEngineersSummary()
+      ]);
+      
+      if (statsResult.success) renderChiefStats(statsResult.data);
+      if (summaryResult.success) renderEngineersSummary(summaryResult.data);
+    } catch (error) {
+      Toast.error('Ma\'lumotlarni yangilashda xatolik');
+    }
+  };
+  
+  /**
+   * Bosh muhandis statistika kartochkalari
+   */
+  const renderChiefStats = (stats) => {
+    const container = document.getElementById('chiefStatsCards');
+    if (!container) return;
+    
+    container.innerHTML = `
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card animate-fadeInUp">
+          <div class="stat-label">Jami arizalar</div>
+          <div class="stat-value">${stats.jami}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-jarayonda animate-fadeInUp">
+          <div class="stat-label">Jarayonda</div>
+          <div class="stat-value">${stats.jarayonda}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-yakunlangan animate-fadeInUp">
+          <div class="stat-label">Yakunlangan</div>
+          <div class="stat-value">${stats.yakunlangan}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-rad animate-fadeInUp">
+          <div class="stat-label">Rad etilgan</div>
+          <div class="stat-value">${stats.radEtilgan}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-bugun animate-fadeInUp">
+          <div class="stat-label">Bugun tugaydi</div>
+          <div class="stat-value">${stats.bugunTugaydi}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-kun1 animate-fadeInUp">
+          <div class="stat-label">1 kun qolgan</div>
+          <div class="stat-value">${stats.kun1Qolgan}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-kun2 animate-fadeInUp">
+          <div class="stat-label">2 kun qolgan</div>
+          <div class="stat-value">${stats.kun2Qolgan}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-kun3 animate-fadeInUp">
+          <div class="stat-label">3 kun qolgan</div>
+          <div class="stat-value">${stats.kun3Qolgan}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-kun4 animate-fadeInUp">
+          <div class="stat-label">4+ kun qolgan</div>
+          <div class="stat-value">${stats.kun4PlusQolgan}</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4 col-lg">
+        <div class="stat-card card-otgan animate-fadeInUp">
+          <div class="stat-label">Muddati o'tgan</div>
+          <div class="stat-value">${stats.muddatiOtgan}</div>
+        </div>
+      </div>
+    `;
+  };
+  
+  /**
+   * Muhandislar jadvali
+   */
+  const renderEngineersSummary = (data) => {
+    const tbody = document.getElementById('engineersSummaryBody');
+    if (!tbody) return;
+    
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Ma\'lumot yo\'q</td></tr>';
+      return;
+    }
+    
+    let html = '';
+    data.forEach((eng) => {
+      html += `
+        <tr>
+          <td><strong>${eng.muhandis}</strong></td>
+          <td><span class="badge bg-primary">${eng.jarayonda}</span></td>
+          <td><span class="badge bg-success">${eng.yakunlangan}</span></td>
+          <td><span class="badge bg-secondary">${eng.radEtilgan}</span></td>
+          <td>${eng.muddatiOtgan > 0 ? `<span class="badge bg-danger">${eng.muddatiOtgan}</span>` : '<span class="text-muted">0</span>'}</td>
+          <td><strong>${eng.jami}</strong></td>
+        </tr>
+      `;
+    });
+    
+    tbody.innerHTML = html;
+  };
+  
+  /**
+   * Oylik hisobot yuklash
+   */
+  const loadMonthlyReport = async () => {
+    const yearInput = document.getElementById('reportYear');
+    const monthInput = document.getElementById('reportMonth');
+    
+    const year = yearInput ? parseInt(yearInput.value) : new Date().getFullYear();
+    const month = monthInput ? parseInt(monthInput.value) : new Date().getMonth() + 1;
+    
+    try {
+      const result = await API.getMonthlyReport(year, month);
+      if (result.success) {
+        renderMonthlyReport(result.data);
+      } else {
+        Toast.error(result.message);
+      }
+    } catch (error) {
+      Toast.error('Hisobotni yuklashda xatolik');
+    }
+  };
+  
+  /**
+   * Oylik hisobot render
+   */
+  const renderMonthlyReport = (data) => {
+    const tbody = document.getElementById('monthlyReportBody');
+    if (!tbody) return;
+    
+    if (!data.engineers || data.engineers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Bu oy uchun ma\'lumot yo\'q</td></tr>';
+      return;
+    }
+    
+    let html = '';
+    data.engineers.forEach((eng) => {
+      html += `
+        <tr>
+          <td>${eng.muhandis}</td>
+          <td>${eng.kelgan}</td>
+          <td>${eng.yakunlangan}</td>
+          <td>${eng.radEtilgan}</td>
+          <td>${eng.jarayonda}</td>
+          <td>
+            <div class="progress" style="height:20px;border-radius:10px">
+              <div class="progress-bar bg-success" style="width:${eng.foiz}%">${eng.foiz}%</div>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+    
+    // Jami qator
+    html += `
+      <tr class="table-active fw-bold">
+        <td>JAMI</td>
+        <td>${data.totals.kelgan}</td>
+        <td>${data.totals.yakunlangan}</td>
+        <td>${data.totals.radEtilgan}</td>
+        <td>${data.totals.jarayonda}</td>
+        <td>
+          <div class="progress" style="height:20px;border-radius:10px">
+            <div class="progress-bar bg-primary" style="width:${data.totals.foiz}%">${data.totals.foiz}%</div>
+          </div>
+        </td>
+      </tr>
+    `;
+    
+    tbody.innerHTML = html;
+  };
+  
+  /**
+   * Filtrlarni qo'llash
+   */
+  const applyFilters = async () => {
+    const filters = {
+      muhandis: document.getElementById('filterMuhandis')?.value || '',
+      holati: document.getElementById('filterHolati')?.value || '',
+      oy: document.getElementById('filterOy')?.value || '',
+      sanaFrom: document.getElementById('filterSanaFrom')?.value ? UI.convertDateFormat(document.getElementById('filterSanaFrom').value) : '',
+      sanaTo: document.getElementById('filterSanaTo')?.value ? UI.convertDateFormat(document.getElementById('filterSanaTo').value) : '',
+      qidiruv: document.getElementById('filterQidiruv')?.value || ''
+    };
+    
+    try {
+      const result = await API.getAllArizalar(filters);
+      if (result.success) {
+        renderAllArizalar(result.data);
+      } else {
+        Toast.error(result.message);
+      }
+    } catch (error) {
+      Toast.error('Filtrlashda xatolik');
+    }
+  };
+  
+  /**
+   * Barcha arizalar jadvalini render
+   */
+  const renderAllArizalar = (arizalar) => {
+    const tbody = document.getElementById('allArizalarBody');
+    if (!tbody) return;
+    
+    if (!arizalar || arizalar.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center py-3">Arizalar topilmadi</td></tr>';
+      return;
+    }
+    
+    let html = '';
+    arizalar.forEach((ariza) => {
+      html += `
+        <tr>
+          <td><strong>${ariza.arizaRaqami}</strong></td>
+          <td>${ariza.muhandis}</td>
+          <td>${ariza.kelganSana}</td>
+          <td>${ariza.obyektTuri}</td>
+          <td>${ariza.xizmatTuri}</td>
+          <td>${ariza.muddat} kun</td>
+          <td>${ariza.tugashSanasi}</td>
+          <td>${UI.getKunBadge(ariza.qolganKun, ariza.holati)}</td>
+          <td>${UI.getHolatBadge(ariza.holati)}</td>
+          <td>${ariza.radSababi || '-'}</td>
+        </tr>
+      `;
+    });
+    
+    tbody.innerHTML = html;
+  };
+  
+  /**
+   * Filtrlarni tozalash
+   */
+  const clearFilters = () => {
+    const ids = ['filterMuhandis', 'filterHolati', 'filterOy', 'filterSanaFrom', 'filterSanaTo', 'filterQidiruv'];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    applyFilters();
+  };
+  
+  /**
+   * Google Charts yuklash
+   */
+  const loadCharts = async () => {
+    try {
+      const result = await API.getChartsData();
+      if (!result.success) return;
+      
+      const data = result.data;
+      
+      // Google Charts yuklash
+      google.charts.load('current', {packages: ['corechart']});
+      google.charts.setOnLoadCallback(() => {
+        drawPieChart(data.pie);
+        drawColumnChart(data.column);
+        drawLineChart(data.line);
+      });
+    } catch (error) {
+      console.log('Charts xatolik:', error);
+    }
+  };
+  
+  /**
+   * Pie Chart - Muddat bo'yicha
+   */
+  const drawPieChart = (pieData) => {
+    const container = document.getElementById('pieChart');
+    if (!container || !pieData || pieData.length <= 1) return;
+    
+    const data = google.visualization.arrayToDataTable(pieData);
+    const options = {
+      title: 'Muddat bo\'yicha taqsimot',
+      pieHole: 0.4,
+      colors: ['#28a745', '#007bff', '#ffc107', '#fd7e14', '#dc3545', '#721c24'],
+      legend: {position: 'bottom'},
+      chartArea: {width: '90%', height: '75%'},
+      titleTextStyle: {fontSize: 14, bold: true}
+    };
+    
+    const chart = new google.visualization.PieChart(container);
+    chart.draw(data, options);
+  };
+  
+  /**
+   * Column Chart - Muhandislar bo'yicha
+   */
+  const drawColumnChart = (columnData) => {
+    const container = document.getElementById('columnChart');
+    if (!container || !columnData || columnData.length <= 1) return;
+    
+    const data = google.visualization.arrayToDataTable(columnData);
+    const options = {
+      title: 'Muhandislar bo\'yicha statistika',
+      colors: ['#007bff', '#28a745', '#6c757d'],
+      legend: {position: 'bottom'},
+      chartArea: {width: '85%', height: '70%'},
+      titleTextStyle: {fontSize: 14, bold: true},
+      vAxis: {minValue: 0}
+    };
+    
+    const chart = new google.visualization.ColumnChart(container);
+    chart.draw(data, options);
+  };
+  
+  /**
+   * Line Chart - Oylik statistika
+   */
+  const drawLineChart = (lineData) => {
+    const container = document.getElementById('lineChart');
+    if (!container || !lineData || lineData.length <= 1) return;
+    
+    const data = google.visualization.arrayToDataTable(lineData);
+    const options = {
+      title: 'Oylik statistika',
+      colors: ['#1a237e', '#28a745', '#dc3545'],
+      legend: {position: 'bottom'},
+      chartArea: {width: '85%', height: '70%'},
+      titleTextStyle: {fontSize: 14, bold: true},
+      curveType: 'function',
+      pointSize: 5
+    };
+    
+    const chart = new google.visualization.LineChart(container);
+    chart.draw(data, options);
+  };
+  
+  return {
+    init, refreshAll, loadMonthlyReport,
+    applyFilters, clearFilters, loadCharts
+  };
+})();
+</script>
