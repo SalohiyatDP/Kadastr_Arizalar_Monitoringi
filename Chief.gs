@@ -109,10 +109,11 @@ function getEngineersSummary() {
       if (!engineerMap[muhandis]) {
         engineerMap[muhandis] = {
           muhandis: muhandis,
+          bugunTugaydi: 0,
+          muddatiOtgan: 0,
           jarayonda: 0,
           yakunlangan: 0,
           radEtilgan: 0,
-          muddatiOtgan: 0,
           jami: 0
         };
       }
@@ -127,6 +128,8 @@ function getEngineersSummary() {
           const qolganKun = getRemainingWorkingDays(today, tugashSanasi);
           if (qolganKun < 0) {
             engineerMap[muhandis].muddatiOtgan++;
+          } else if (qolganKun === 0) {
+            engineerMap[muhandis].bugunTugaydi++;
           }
         }
       } else if (holati === holatlar.YAKUNLANDI) {

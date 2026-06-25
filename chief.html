@@ -90,8 +90,8 @@
         </div>
         <div class="table-responsive">
           <table class="data-table">
-            <thead><tr><th>Muhandis</th><th>Jarayonda</th><th>Yakunlangan</th><th>Rad etilgan</th><th>Muddati o'tgan</th><th>Jami</th></tr></thead>
-            <tbody id="engineersSummaryBody"><tr><td colspan="6" class="text-center py-3">Yuklanmoqda...</td></tr></tbody>
+            <thead><tr><th>Muhandis</th><th>Bugun muddati</th><th>Muddati o'tgan</th><th>Jarayonda</th><th>Yakunlangan</th><th>Rad etilgan</th><th>Jami</th></tr></thead>
+            <tbody id="engineersSummaryBody"><tr><td colspan="7" class="text-center py-3">Yuklanmoqda...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -247,11 +247,17 @@
     function renderSummary(data) {
       var t = document.getElementById('engineersSummaryBody');
       if (!t) return;
-      if (!data || !data.length) { t.innerHTML = '<tr><td colspan="6" class="text-center py-3">Ma\'lumot yo\'q</td></tr>'; return; }
+      if (!data || !data.length) { t.innerHTML = '<tr><td colspan="7" class="text-center py-3">Ma\'lumot yo\'q</td></tr>'; return; }
       var h = '';
       for (var i = 0; i < data.length; i++) {
         var e = data[i];
-        h += '<tr><td><strong>'+e.muhandis+'</strong></td><td><span class="badge bg-primary">'+e.jarayonda+'</span></td><td><span class="badge bg-success">'+e.yakunlangan+'</span></td><td><span class="badge bg-secondary">'+e.radEtilgan+'</span></td><td>'+(e.muddatiOtgan>0?'<span class="badge bg-danger">'+e.muddatiOtgan+'</span>':'0')+'</td><td><strong>'+e.jami+'</strong></td></tr>';
+        h += '<tr><td><strong>'+e.muhandis+'</strong></td>'+
+          '<td>'+((e.bugunTugaydi||0)>0?'<span class="badge bg-danger">'+e.bugunTugaydi+'</span>':'0')+'</td>'+
+          '<td>'+((e.muddatiOtgan||0)>0?'<span class="badge" style="background:#721c24;color:#fff">'+e.muddatiOtgan+'</span>':'0')+'</td>'+
+          '<td><span class="badge bg-primary">'+e.jarayonda+'</span></td>'+
+          '<td><span class="badge bg-success">'+e.yakunlangan+'</span></td>'+
+          '<td><span class="badge bg-secondary">'+e.radEtilgan+'</span></td>'+
+          '<td><strong>'+e.jami+'</strong></td></tr>';
       }
       t.innerHTML = h;
     }
