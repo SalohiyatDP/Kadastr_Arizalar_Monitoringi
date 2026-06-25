@@ -737,7 +737,12 @@ const EngineerPage = (() => {
     
     let html = '';
     sorted.forEach((ariza) => {
-      const rowClass = (ariza.holati === 'Jarayonda' && parseInt(ariza.qolganKun) === 0) ? 'row-bugun-tugaydi' : '';
+      let rowClass = '';
+      if (ariza.holati === 'Jarayonda') {
+        const qk = parseInt(ariza.qolganKun);
+        if (qk === 0) rowClass = 'row-bugun-tugaydi';
+        else if (qk === 1) rowClass = 'row-1kun';
+      }
       html += `
         <tr class="animate-fadeIn ${rowClass}">
           <td><strong>${ariza.arizaRaqami}</strong></td>

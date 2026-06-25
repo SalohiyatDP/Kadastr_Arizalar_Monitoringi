@@ -36,6 +36,9 @@
     .data-table tbody tr:hover{background:#f8f9ff}
     .row-bugun-tugaydi{background:#fff0f0 !important}
     .row-bugun-tugaydi:hover{background:#ffe5e5 !important}
+    .row-1kun{background:#fffbe6 !important}
+    .row-1kun:hover{background:#fff6cc !important}
+    .cell-zero-warn{background:#fffbe6 !important}
     .badge-holat{padding:0.35rem 0.75rem;border-radius:20px;font-size:0.75rem;font-weight:600;display:inline-block}
     .badge-jarayonda{background:#e3f2fd;color:#1565c0}
     .badge-yakunlangan{background:#e8f5e9;color:#2e7d32}
@@ -83,10 +86,13 @@
     </section>
 
     <section class="mt-4">
-      <div class="table-container">
+      <div class="table-container" id="summaryContainer">
         <div class="table-header d-flex justify-content-between align-items-center">
           <span>&#128101; Muhandislar bo'yicha</span>
-          <button class="btn btn-sm btn-light" id="btnRefresh">&#128260; Yangilash</button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-success" id="btnExportJpg">&#128247; JPG yuklash</button>
+            <button class="btn btn-sm btn-light" id="btnRefresh">&#128260; Yangilash</button>
+          </div>
         </div>
         <div class="table-responsive">
           <table class="data-table">
@@ -180,6 +186,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script>
   (function() {
@@ -251,9 +258,15 @@
       var h = '';
       for (var i = 0; i < data.length; i++) {
         var e = data[i];
+        var bugun = e.bugunTugaydi || 0;
+        var otgan = e.muddatiOtgan || 0;
+        var bugunCell = bugun > 0 ? '<span class="badge bg-danger">'+bugun+'</span>' : '0';
+        var otganCell = otgan > 0 ? '<span class="badge" style="background:#721c24;color:#fff">'+otgan+'</span>' : '0';
+        var bugunClass = bugun === 0 ? ' class="cell-zero-warn"' : '';
+        var otganClass = otgan === 0 ? ' class="cell-zero-warn"' : '';
         h += '<tr><td><strong>'+e.muhandis+'</strong></td>'+
-          '<td>'+((e.bugunTugaydi||0)>0?'<span class="badge bg-danger">'+e.bugunTugaydi+'</span>':'0')+'</td>'+
-          '<td>'+((e.muddatiOtgan||0)>0?'<span class="badge" style="background:#721c24;color:#fff">'+e.muddatiOtgan+'</span>':'0')+'</td>'+
+          '<td'+bugunClass+'>'+bugunCell+'</td>'+
+          '<td'+otganClass+'>'+otganCell+'</td>'+
           '<td><span class="badge bg-primary">'+e.jarayonda+'</span></td>'+
           '<td><span class="badge bg-success">'+e.yakunlangan+'</span></td>'+
           '<td><span class="badge bg-secondary">'+e.radEtilgan+'</span></td>'+
@@ -282,7 +295,11 @@
       var h = '';
       for (var i = 0; i < arr.length; i++) {
         var a = arr[i];
-        var rc = (a.holati === 'Jarayonda' && parseInt(a.qolganKun) === 0) ? ' class="row-bugun-tugaydi"' : '';
+        var rc = '';
+        if (a.holati === 'Jarayonda') {
+          if (parseInt(a.qolganKun) === 0) rc = ' class="row-bugun-tugaydi"';
+          else if (parseInt(a.qolganKun) === 1) rc = ' class="row-1kun"';
+        }
         h += '<tr'+rc+'><td><strong>'+a.arizaRaqami+'</strong></td><td>'+a.muhandis+'</td><td>'+a.kelganSana+'</td><td>'+a.obyektTuri+'</td><td>'+a.xizmatTuri+'</td><td>'+a.muddat+'</td><td>'+a.tugashSanasi+'</td><td>'+getKunBadge(a.qolganKun,a.holati)+'</td><td>'+getHolatBadge(a.holati)+'</td><td>'+(a.radSababi||'-')+'</td></tr>';
       }
       t.innerHTML = h;
@@ -413,10 +430,66 @@
       });
     }
 
+    // ==================== JPG EXPORT ====================
+    function exportSummaryJpg() {
+      var container = document.getElementById('summaryContainer');
+      if (!container) return;
+      if (typeof html2canvas === 'undefined') {
+        alert('JPG kutubxonasi hali yuklanmadi, biroz kuting va qayta urinib ko\'ring.');
+        return;
+      }
+
+      // Eksport uchun chiroyli sarlavha bilan vaqtinchalik o'ram yaratish
+      var wrapper = document.createElement('div');
+      wrapper.style.position = 'fixed';
+      wrapper.style.left = '-10000px';
+      wrapper.style.top = '0';
+      wrapper.style.background = '#ffffff';
+      wrapper.style.padding = '24px';
+      wrapper.style.width = (container.offsetWidth + 48) + 'px';
+      wrapper.style.fontFamily = "'Segoe UI', sans-serif";
+
+      var now = new Date();
+      var dd = ('0'+now.getDate()).slice(-2);
+      var mm = ('0'+(now.getMonth()+1)).slice(-2);
+      var yyyy = now.getFullYear();
+      var sana = dd + '.' + mm + '.' + yyyy;
+
+      var title = document.createElement('div');
+      title.innerHTML =
+        '<div style="text-align:center;margin-bottom:16px">' +
+        '<div style="font-size:20px;font-weight:700;color:#1a237e">Davlat kadastrlari palatasi</div>' +
+        '<div style="font-size:15px;color:#3949ab;margin-top:2px">Muhandislar bo\'yicha hisobot</div>' +
+        '<div style="font-size:13px;color:#6c757d;margin-top:4px">Sana: ' + sana + '</div>' +
+        '</div>';
+      wrapper.appendChild(title);
+
+      // Jadval nusxasini olish
+      var clone = container.cloneNode(true);
+      // Tugmalarni yashirish
+      var btns = clone.querySelectorAll('button');
+      for (var i = 0; i < btns.length; i++) btns[i].style.display = 'none';
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      html2canvas(wrapper, {scale: 2, backgroundColor: '#ffffff', useCORS: true}).then(function(canvas) {
+        document.body.removeChild(wrapper);
+        var link = document.createElement('a');
+        link.download = 'Muhandislar_hisoboti_' + dd + '-' + mm + '-' + yyyy + '.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+      }).catch(function(err) {
+        if (wrapper.parentNode) document.body.removeChild(wrapper);
+        alert('JPG yaratishda xatolik: ' + err);
+      });
+    }
+
     function init() {
       var btnBack = document.getElementById('btnBack');
       if (btnBack) { btnBack.href = 'javascript:void(0)'; btnBack.onclick = goToMain; }
       document.getElementById('btnRefresh').onclick = function() { loadStats(); loadSummary(); };
+      var btnExp = document.getElementById('btnExportJpg');
+      if (btnExp) btnExp.onclick = exportSummaryJpg;
       document.getElementById('btnMonthly').onclick = doMonthly;
       document.getElementById('btnFilter').onclick = doFilter;
       document.getElementById('btnClear').onclick = doClear;
