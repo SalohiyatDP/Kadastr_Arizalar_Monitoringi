@@ -185,6 +185,17 @@
   (function() {
     function getMainUrl() { return window.location.href.split('?')[0]; }
 
+    var _webAppUrl = '';
+    function goToMain() {
+      if (_webAppUrl) {
+        window.top.location.href = _webAppUrl;
+      } else {
+        google.script.run.withSuccessHandler(function(url) {
+          window.top.location.href = url;
+        }).getWebAppUrl();
+      }
+    }
+
     function getKunBadge(k, h) {
       if (h !== 'Jarayonda') return '-';
       var n = parseInt(k), c = 'badge-kun-4plus';
@@ -397,11 +408,15 @@
     }
 
     function init() {
-      document.getElementById('btnBack').href = getMainUrl();
+      var btnBack = document.getElementById('btnBack');
+      if (btnBack) { btnBack.href = 'javascript:void(0)'; btnBack.onclick = goToMain; }
       document.getElementById('btnRefresh').onclick = function() { loadStats(); loadSummary(); };
       document.getElementById('btnMonthly').onclick = doMonthly;
       document.getElementById('btnFilter').onclick = doFilter;
       document.getElementById('btnClear').onclick = doClear;
+
+      // Web app URL ni oldindan yuklab qo'yish
+      google.script.run.withSuccessHandler(function(url) { _webAppUrl = url; }).getWebAppUrl();
 
       // Arxiv tugmalari
       document.getElementById('btnArxivFilter').onclick = doArxivFilter;

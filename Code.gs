@@ -53,6 +53,27 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+/**
+ * Web App ning haqiqiy URL manzilini qaytarish
+ * (iframe ichidagi window.location emas, balki /exec URL)
+ * @returns {string} Web app URL
+ */
+function getWebAppUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
+/**
+ * Web App URL ni JSON formatida qaytarish (frontend uchun)
+ * @returns {string} JSON response
+ */
+function apiGetWebAppUrl() {
+  try {
+    return JSON.stringify(successResponse({url: ScriptApp.getService().getUrl()}, 'URL'));
+  } catch (error) {
+    return JSON.stringify(errorResponse('URL olishda xatolik', error));
+  }
+}
+
 
 // ============================================================
 // API ENDPOINTS - Frontend AJAX so'rovlari uchun

@@ -27,10 +27,10 @@
         </div>
       </div>
       <div class="d-flex gap-2">
-        <button class="btn btn-chief" onclick="window.open(getChiefUrl(), '_top')">
+        <button class="btn btn-chief" id="btnChief">
           &#128200; Bosh muhandis
         </button>
-        <button class="btn btn-back" onclick="window.open(getMainUrl(), '_top')">
+        <button class="btn btn-back" id="btnMain">
           &#8592; Orqaga
         </button>
       </div>
@@ -204,13 +204,26 @@
   <?!= include('script'); ?>
   
   <script>
-    function getChiefUrl() {
-      const baseUrl = window.location.href.split('?')[0];
-      return baseUrl + '?page=chief';
+    let _webAppUrl = '';
+
+    function goToChief() {
+      if (_webAppUrl) {
+        window.top.location.href = _webAppUrl + '?page=chief';
+      } else {
+        google.script.run.withSuccessHandler(function(url) {
+          window.top.location.href = url + '?page=chief';
+        }).getWebAppUrl();
+      }
     }
-    
-    function getMainUrl() {
-      return window.location.href.split('?')[0];
+
+    function goToMain() {
+      if (_webAppUrl) {
+        window.top.location.href = _webAppUrl;
+      } else {
+        google.script.run.withSuccessHandler(function(url) {
+          window.top.location.href = url;
+        }).getWebAppUrl();
+      }
     }
     
     // Muhandis tanlanganda header yangilash
@@ -226,6 +239,11 @@
     
     document.addEventListener('DOMContentLoaded', () => {
       EngineerPage.init();
+      const btnChief = document.getElementById('btnChief');
+      const btnMain = document.getElementById('btnMain');
+      if (btnChief) btnChief.onclick = goToChief;
+      if (btnMain) btnMain.onclick = goToMain;
+      google.script.run.withSuccessHandler(function(url) { _webAppUrl = url; }).getWebAppUrl();
     });
   </script>
 

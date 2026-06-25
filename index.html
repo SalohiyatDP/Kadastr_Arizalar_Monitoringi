@@ -27,7 +27,7 @@
         </div>
       </div>
       <div>
-        <button class="btn btn-chief" onclick="window.open(getChiefUrl(), '_top')">
+        <button class="btn btn-chief" id="btnChief">
           &#128200; Bosh muhandis hisoboti
         </button>
       </div>
@@ -217,13 +217,27 @@
   
   <script>
     /**
-     * Bosh muhandis sahifasi URL
+     * Web App haqiqiy URL'ini saqlash uchun
      */
-    function getChiefUrl() {
-      const baseUrl = window.location.href.split('?')[0];
-      return baseUrl + '?page=chief';
+    let _webAppUrl = '';
+
+    /**
+     * Bosh muhandis sahifasiga o'tish (haqiqiy /exec URL bilan)
+     */
+    function goToChief() {
+      if (_webAppUrl) {
+        window.top.location.href = _webAppUrl + '?page=chief';
+      } else {
+        // URL hali yuklanmagan bo'lsa, server'dan olib o'tamiz
+        google.script.run
+          .withSuccessHandler(function(url) {
+            _webAppUrl = url;
+            window.top.location.href = url + '?page=chief';
+          })
+          .getWebAppUrl();
+      }
     }
-    
+
     /**
      * Muhandis tanlanganda forma muhandis maydonini yangilash
      */
@@ -242,6 +256,13 @@
      */
     document.addEventListener('DOMContentLoaded', () => {
       EngineerPage.init();
+      // Bosh muhandis tugmasi
+      const btnChief = document.getElementById('btnChief');
+      if (btnChief) btnChief.onclick = goToChief;
+      // Web app URL ni oldindan yuklab qo'yish
+      google.script.run
+        .withSuccessHandler(function(url) { _webAppUrl = url; })
+        .getWebAppUrl();
     });
   </script>
 
