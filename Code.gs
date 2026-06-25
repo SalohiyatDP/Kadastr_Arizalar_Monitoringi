@@ -14,32 +14,33 @@
  */
 function doGet(e) {
   try {
-    const page = e && e.parameter && e.parameter.page ? e.parameter.page : 'index';
-    const config = getSystemConfig();
-    
-    let template;
-    
-    switch (page) {
-      case 'engineer':
-        template = HtmlService.createTemplateFromFile('engineer');
-        break;
-      case 'chief':
-        template = HtmlService.createTemplateFromFile('chief');
-        break;
-      default:
-        template = HtmlService.createTemplateFromFile('index');
+    var page = 'index';
+    if (e && e.parameter && e.parameter.page) {
+      page = e.parameter.page;
     }
     
-    const htmlOutput = template.evaluate();
-    htmlOutput.setTitle(config.APP_NAME + ' - ' + config.APP_SUBTITLE);
-    htmlOutput.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    htmlOutput.addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    var template;
     
-    return htmlOutput;
+    if (page === 'chief') {
+      template = HtmlService.createTemplateFromFile('chief');
+    } else if (page === 'engineer') {
+      template = HtmlService.createTemplateFromFile('engineer');
+    } else {
+      template = HtmlService.createTemplateFromFile('index');
+    }
+    
+    var output = template.evaluate();
+    output.setTitle('Arizalar nazorati tizimi');
+    output.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    output.addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    
+    return output;
     
   } catch (error) {
     Logger.log('doGet xatosi: ' + error.message);
-    return HtmlService.createHtmlOutput('<h2>Xatolik yuz berdi</h2><p>' + error.message + '</p>');
+    return HtmlService.createHtmlOutput(
+      '<html><body><h2>Xatolik: ' + error.message + '</h2><p>Sahifa: ' + (e && e.parameter ? e.parameter.page : 'index') + '</p></body></html>'
+    );
   }
 }
 

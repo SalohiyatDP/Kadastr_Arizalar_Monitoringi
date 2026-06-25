@@ -4,13 +4,59 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bosh muhandis hisoboti - Arizalar nazorati</title>
+  <title>Bosh muhandis hisoboti</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <?!= include('style'); ?>
+  <style>
+    :root{--primary:#1a237e;--primary-light:#3949ab;--success:#28a745;--warning:#ffc107;--danger:#dc3545;--danger-dark:#721c24;--info:#007bff;--orange:#fd7e14;--gray:#6c757d;--light-bg:#f4f6f9;--card-shadow:0 2px 12px rgba(0,0,0,0.08);--border-radius:12px;--transition:all 0.3s ease}
+    *{box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:var(--light-bg);color:#333;margin:0;padding:0}
+    .app-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:1rem 2rem;position:sticky;top:0;z-index:1000}
+    .app-header h1{font-size:1.4rem;margin:0;font-weight:600}
+    .app-header .subtitle{font-size:0.85rem;opacity:0.85;margin-top:2px}
+    .header-logo{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+    .main-container{max-width:1400px;margin:0 auto;padding:1.5rem}
+    .stat-card{background:#fff;border-radius:var(--border-radius);padding:1.25rem;box-shadow:var(--card-shadow);transition:var(--transition);border-left:4px solid var(--primary);position:relative;overflow:hidden}
+    .stat-card:hover{transform:translateY(-2px)}
+    .stat-card .stat-value{font-size:2rem;font-weight:700;color:var(--primary);margin:0.5rem 0}
+    .stat-card .stat-label{font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray);font-weight:600}
+    .stat-card.card-jarayonda{border-left-color:var(--info)}.stat-card.card-jarayonda .stat-value{color:var(--info)}
+    .stat-card.card-yakunlangan{border-left-color:var(--success)}.stat-card.card-yakunlangan .stat-value{color:var(--success)}
+    .stat-card.card-rad{border-left-color:var(--gray)}.stat-card.card-rad .stat-value{color:var(--gray)}
+    .stat-card.card-bugun{border-left-color:var(--danger)}.stat-card.card-bugun .stat-value{color:var(--danger)}
+    .stat-card.card-otgan{border-left-color:var(--danger-dark)}.stat-card.card-otgan .stat-value{color:var(--danger-dark)}
+    .stat-card.card-kun1{border-left-color:var(--orange)}.stat-card.card-kun1 .stat-value{color:var(--orange)}
+    .stat-card.card-kun2{border-left-color:var(--warning)}.stat-card.card-kun2 .stat-value{color:var(--warning)}
+    .stat-card.card-kun3{border-left-color:var(--info)}.stat-card.card-kun3 .stat-value{color:var(--info)}
+    .stat-card.card-kun4{border-left-color:var(--success)}.stat-card.card-kun4 .stat-value{color:var(--success)}
+    .table-container{background:#fff;border-radius:var(--border-radius);box-shadow:var(--card-shadow);overflow:hidden;margin-top:1.5rem}
+    .table-container .table-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:1rem 1.5rem;font-weight:600}
+    .data-table{width:100%;border-collapse:collapse;font-size:0.88rem}
+    .data-table thead th{background:#f8f9fa;border-bottom:2px solid #dee2e6;padding:0.75rem;text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;color:#555;white-space:nowrap}
+    .data-table tbody td{padding:0.7rem 0.75rem;border-bottom:1px solid #eee;vertical-align:middle}
+    .data-table tbody tr:hover{background:#f8f9ff}
+    .badge-holat{padding:0.35rem 0.75rem;border-radius:20px;font-size:0.75rem;font-weight:600;display:inline-block}
+    .badge-jarayonda{background:#e3f2fd;color:#1565c0}
+    .badge-yakunlangan{background:#e8f5e9;color:#2e7d32}
+    .badge-rad{background:#f5f5f5;color:#616161}
+    .badge-kun{padding:0.3rem 0.6rem;border-radius:6px;font-size:0.8rem;font-weight:700;display:inline-block;min-width:35px;text-align:center}
+    .badge-kun-4plus{background:#e8f5e9;color:#2e7d32}
+    .badge-kun-3{background:#e3f2fd;color:#1565c0}
+    .badge-kun-2{background:#fff8e1;color:#f57f17}
+    .badge-kun-1{background:#fff3e0;color:#e65100}
+    .badge-kun-0{background:#ffebee;color:#c62828}
+    .badge-kun-otgan{background:#fce4ec;color:#880e4f;font-weight:800}
+    .filter-section{background:#fff;border-radius:var(--border-radius);box-shadow:var(--card-shadow);padding:1.25rem;margin-top:1.5rem}
+    .chart-container{background:#fff;border-radius:var(--border-radius);box-shadow:var(--card-shadow);padding:1.25rem;margin-top:1.5rem;min-height:350px}
+    .chart-container .chart-title{font-size:1rem;font-weight:600;color:var(--primary);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid #eee}
+    .btn-back{background:transparent;border:1.5px solid rgba(255,255,255,0.5);color:#fff;padding:0.4rem 1rem;border-radius:8px;font-size:0.85rem;text-decoration:none}
+    .btn-back:hover{background:rgba(255,255,255,0.1);border-color:#fff;color:#fff}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .animate-fadeInUp{animation:fadeInUp 0.5s ease forwards}
+    @media(max-width:768px){.app-header{padding:0.75rem 1rem}.app-header h1{font-size:1.1rem}.main-container{padding:1rem}.stat-card{padding:1rem}.stat-card .stat-value{font-size:1.5rem}}
+  </style>
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="app-header">
     <div class="d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center">
@@ -26,517 +72,247 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
   <main class="main-container">
-    
-    <!-- STATISTIKA KARTOCHKALARI -->
     <section>
       <h5 class="fw-bold mb-3">&#128202; Umumiy statistika</h5>
       <div class="row g-3" id="chiefStatsCards">
-        <div class="col-12 text-center py-3">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p class="mt-2 text-muted">Yuklanmoqda...</p>
-        </div>
+        <div class="col-12 text-center py-3"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Yuklanmoqda...</p></div>
       </div>
     </section>
 
-    <!-- MUHANDISLAR JADVALI -->
     <section class="mt-4">
       <div class="table-container">
         <div class="table-header d-flex justify-content-between align-items-center">
-          <span>&#128101; Muhandislar bo'yicha statistika</span>
+          <span>&#128101; Muhandislar bo'yicha</span>
           <button class="btn btn-sm btn-light" id="btnRefresh">&#128260; Yangilash</button>
         </div>
         <div class="table-responsive">
           <table class="data-table">
-            <thead>
-              <tr>
-                <th>Muhandis</th>
-                <th>Jarayonda</th>
-                <th>Yakunlangan</th>
-                <th>Rad etilgan</th>
-                <th>Muddati o'tgan</th>
-                <th>Jami</th>
-              </tr>
-            </thead>
-            <tbody id="engineersSummaryBody">
-              <tr><td colspan="6" class="text-center py-3">Yuklanmoqda...</td></tr>
-            </tbody>
+            <thead><tr><th>Muhandis</th><th>Jarayonda</th><th>Yakunlangan</th><th>Rad etilgan</th><th>Muddati o'tgan</th><th>Jami</th></tr></thead>
+            <tbody id="engineersSummaryBody"><tr><td colspan="6" class="text-center py-3">Yuklanmoqda...</td></tr></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- OYLIK HISOBOT -->
     <section class="mt-4">
       <div class="table-container">
-        <div class="table-header">
-          <span>&#128197; Oylik hisobot</span>
-        </div>
+        <div class="table-header"><span>&#128197; Oylik hisobot</span></div>
         <div class="p-3">
           <div class="row g-3 align-items-end mb-3">
-            <div class="col-auto">
-              <label class="form-label fw-semibold small">Yil</label>
-              <select class="form-select form-select-sm" id="reportYear" style="width:100px"></select>
-            </div>
-            <div class="col-auto">
-              <label class="form-label fw-semibold small">Oy</label>
-              <select class="form-select form-select-sm" id="reportMonth" style="width:140px">
-                <option value="1">Yanvar</option>
-                <option value="2">Fevral</option>
-                <option value="3">Mart</option>
-                <option value="4">Aprel</option>
-                <option value="5">May</option>
-                <option value="6">Iyun</option>
-                <option value="7">Iyul</option>
-                <option value="8">Avgust</option>
-                <option value="9">Sentabr</option>
-                <option value="10">Oktabr</option>
-                <option value="11">Noyabr</option>
-                <option value="12">Dekabr</option>
-              </select>
-            </div>
-            <div class="col-auto">
-              <button class="btn btn-primary btn-sm" id="btnMonthly">&#128269; Ko'rsatish</button>
-            </div>
+            <div class="col-auto"><label class="form-label small fw-semibold">Yil</label><select class="form-select form-select-sm" id="reportYear" style="width:100px"></select></div>
+            <div class="col-auto"><label class="form-label small fw-semibold">Oy</label><select class="form-select form-select-sm" id="reportMonth" style="width:140px"><option value="1">Yanvar</option><option value="2">Fevral</option><option value="3">Mart</option><option value="4">Aprel</option><option value="5">May</option><option value="6">Iyun</option><option value="7">Iyul</option><option value="8">Avgust</option><option value="9">Sentabr</option><option value="10">Oktabr</option><option value="11">Noyabr</option><option value="12">Dekabr</option></select></div>
+            <div class="col-auto"><button class="btn btn-primary btn-sm" id="btnMonthly">Ko'rsatish</button></div>
           </div>
           <div class="table-responsive">
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Muhandis</th>
-                  <th>Kelgan</th>
-                  <th>Yakunlangan</th>
-                  <th>Rad etilgan</th>
-                  <th>Jarayonda</th>
-                  <th>Bajarilish foizi</th>
-                </tr>
-              </thead>
-              <tbody id="monthlyReportBody">
-                <tr><td colspan="6" class="text-center py-3 text-muted">Oy tanlang va "Ko'rsatish" tugmasini bosing</td></tr>
-              </tbody>
+              <thead><tr><th>Muhandis</th><th>Kelgan</th><th>Yakunlangan</th><th>Rad etilgan</th><th>Jarayonda</th><th>Bajarilish %</th></tr></thead>
+              <tbody id="monthlyReportBody"><tr><td colspan="6" class="text-center py-3 text-muted">Oy tanlang</td></tr></tbody>
             </table>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- FILTRLAR -->
     <section class="mt-4">
       <div class="filter-section">
         <h6 class="fw-bold mb-3">&#128270; Filtrlar</h6>
         <div class="row g-2 align-items-end">
-          <div class="col-md-2">
-            <label class="form-label small">Muhandis</label>
-            <select class="form-select form-select-sm" id="filterMuhandis">
-              <option value="">Barchasi</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small">Holati</label>
-            <select class="form-select form-select-sm" id="filterHolati">
-              <option value="">Barchasi</option>
-              <option value="Jarayonda">Jarayonda</option>
-              <option value="Yakunlandi">Yakunlandi</option>
-              <option value="Rad etildi">Rad etildi</option>
-            </select>
-          </div>
-          <div class="col-md-1">
-            <label class="form-label small">Oy</label>
-            <select class="form-select form-select-sm" id="filterOy">
-              <option value="">-</option>
-              <option value="1">1</option><option value="2">2</option>
-              <option value="3">3</option><option value="4">4</option>
-              <option value="5">5</option><option value="6">6</option>
-              <option value="7">7</option><option value="8">8</option>
-              <option value="9">9</option><option value="10">10</option>
-              <option value="11">11</option><option value="12">12</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small">Sana (dan)</label>
-            <input type="date" class="form-control form-control-sm" id="filterSanaFrom">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small">Sana (gacha)</label>
-            <input type="date" class="form-control form-control-sm" id="filterSanaTo">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label small">Qidiruv</label>
-            <input type="text" class="form-control form-control-sm" id="filterQidiruv" placeholder="Ariza raqami...">
-          </div>
-          <div class="col-md-1 d-flex gap-1">
-            <button class="btn btn-primary btn-sm" id="btnFilter">&#128269;</button>
-            <button class="btn btn-outline-secondary btn-sm" id="btnClear">&#10006;</button>
-          </div>
+          <div class="col-md-2"><label class="form-label small">Muhandis</label><select class="form-select form-select-sm" id="filterMuhandis"><option value="">Barchasi</option></select></div>
+          <div class="col-md-2"><label class="form-label small">Holati</label><select class="form-select form-select-sm" id="filterHolati"><option value="">Barchasi</option><option value="Jarayonda">Jarayonda</option><option value="Yakunlandi">Yakunlandi</option><option value="Rad etildi">Rad etildi</option></select></div>
+          <div class="col-md-2"><label class="form-label small">Sana dan</label><input type="date" class="form-control form-control-sm" id="filterSanaFrom"></div>
+          <div class="col-md-2"><label class="form-label small">Sana gacha</label><input type="date" class="form-control form-control-sm" id="filterSanaTo"></div>
+          <div class="col-md-2"><label class="form-label small">Qidiruv</label><input type="text" class="form-control form-control-sm" id="filterQidiruv" placeholder="Ariza raqami"></div>
+          <div class="col-md-2 d-flex gap-1"><button class="btn btn-primary btn-sm" id="btnFilter">Filtrlash</button><button class="btn btn-outline-secondary btn-sm" id="btnClear">Tozalash</button></div>
         </div>
       </div>
-
-      <!-- Arizalar jadvali -->
       <div class="table-container mt-3">
         <div class="table-header"><span>&#128203; Barcha arizalar</span></div>
         <div class="table-responsive">
           <table class="data-table">
-            <thead>
-              <tr>
-                <th>Ariza raqami</th>
-                <th>Muhandis</th>
-                <th>Kelgan sana</th>
-                <th>Obyekt turi</th>
-                <th>Xizmat turi</th>
-                <th>Muddat</th>
-                <th>Tugash sanasi</th>
-                <th>Qolgan kun</th>
-                <th>Holati</th>
-                <th>Rad sababi</th>
-              </tr>
-            </thead>
-            <tbody id="allArizalarBody">
-              <tr><td colspan="10" class="text-center py-3 text-muted">Filtrlash uchun parametrlarni tanlang</td></tr>
-            </tbody>
+            <thead><tr><th>Ariza raqami</th><th>Muhandis</th><th>Kelgan sana</th><th>Obyekt</th><th>Xizmat</th><th>Muddat</th><th>Tugash</th><th>Qolgan</th><th>Holati</th><th>Sabab</th></tr></thead>
+            <tbody id="allArizalarBody"><tr><td colspan="10" class="text-center py-3 text-muted">Filtrlang</td></tr></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- DIAGRAMMALAR -->
     <section class="mt-4">
       <h5 class="fw-bold mb-3">&#128202; Diagrammalar</h5>
       <div class="row g-3">
-        <div class="col-md-6">
-          <div class="chart-container">
-            <div class="chart-title">Muddat bo'yicha taqsimot</div>
-            <div id="pieChart" style="width:100%; height:300px"></div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="chart-container">
-            <div class="chart-title">Muhandislar bo'yicha</div>
-            <div id="columnChart" style="width:100%; height:300px"></div>
-          </div>
-        </div>
-        <div class="col-12">
-          <div class="chart-container">
-            <div class="chart-title">Oylik statistika</div>
-            <div id="lineChart" style="width:100%; height:350px"></div>
-          </div>
-        </div>
+        <div class="col-md-6"><div class="chart-container"><div class="chart-title">Muddat bo'yicha</div><div id="pieChart" style="width:100%;height:300px"></div></div></div>
+        <div class="col-md-6"><div class="chart-container"><div class="chart-title">Muhandislar bo'yicha</div><div id="columnChart" style="width:100%;height:300px"></div></div></div>
+        <div class="col-12"><div class="chart-container"><div class="chart-title">Oylik statistika</div><div id="lineChart" style="width:100%;height:350px"></div></div></div>
       </div>
     </section>
-    
   </main>
 
-  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Google Charts -->
   <script src="https://www.gstatic.com/charts/loader.js"></script>
 
-
   <script>
-  /**
-   * Bosh muhandis sahifasi - barcha logika shu yerda
-   * (script.html include qilinmaydi - chunki google.script.run bilan conflict bo'lishi mumkin)
-   */
   (function() {
-    'use strict';
+    function getMainUrl() { return window.location.href.split('?')[0]; }
 
-    // ==================== HELPERS ====================
-    function getMainUrl() {
-      var url = google.script.url ? google.script.url.getLocation() : null;
-      return window.location.href.split('?')[0];
+    function getKunBadge(k, h) {
+      if (h !== 'Jarayonda') return '-';
+      var n = parseInt(k), c = 'badge-kun-4plus';
+      if (n < 0) c = 'badge-kun-otgan';
+      else if (n === 0) c = 'badge-kun-0';
+      else if (n === 1) c = 'badge-kun-1';
+      else if (n === 2) c = 'badge-kun-2';
+      else if (n === 3) c = 'badge-kun-3';
+      return '<span class="badge-kun ' + c + '">' + n + ' kun</span>';
     }
 
-    function getKunBadge(qolganKun, holati) {
-      if (holati !== 'Jarayonda') return '-';
-      var kun = parseInt(qolganKun);
-      var cls = 'badge-kun-4plus';
-      if (kun < 0) cls = 'badge-kun-otgan';
-      else if (kun === 0) cls = 'badge-kun-0';
-      else if (kun === 1) cls = 'badge-kun-1';
-      else if (kun === 2) cls = 'badge-kun-2';
-      else if (kun === 3) cls = 'badge-kun-3';
-      var text = kun + ' kun';
-      return '<span class="badge-kun ' + cls + '">' + text + '</span>';
+    function getHolatBadge(h) {
+      var c = 'badge-jarayonda';
+      if (h === 'Yakunlandi') c = 'badge-yakunlangan';
+      else if (h === 'Rad etildi') c = 'badge-rad';
+      return '<span class="badge-holat ' + c + '">' + h + '</span>';
     }
 
-    function getHolatBadge(holati) {
-      var cls = 'badge-jarayonda';
-      if (holati === 'Yakunlandi') cls = 'badge-yakunlangan';
-      else if (holati === 'Rad etildi') cls = 'badge-rad';
-      return '<span class="badge-holat ' + cls + '">' + holati + '</span>';
+    function convertDate(d) {
+      if (!d) return '';
+      var p = d.split('-');
+      return p.length === 3 ? p[2]+'.'+p[1]+'.'+p[0] : d;
     }
 
-    function convertDateFormat(dateStr) {
-      if (!dateStr) return '';
-      var parts = dateStr.split('-');
-      if (parts.length !== 3) return dateStr;
-      return parts[2] + '.' + parts[1] + '.' + parts[0];
+    function api(fn, args, ok, fail) {
+      var r = google.script.run.withSuccessHandler(function(res) {
+        try { var d = JSON.parse(res); if (ok) ok(d); } catch(e) { if (fail) fail(e); }
+      }).withFailureHandler(function(e) { if (fail) fail(e); });
+      if (args && args.length > 0) r[fn].apply(r, args); else r[fn]();
     }
 
-    // ==================== API CALLS ====================
-    function apiCall(funcName, args, onSuccess, onError) {
-      var runner = google.script.run
-        .withSuccessHandler(function(response) {
-          try {
-            var result = JSON.parse(response);
-            if (onSuccess) onSuccess(result);
-          } catch(e) {
-            if (onError) onError('Parse xatolik: ' + e.message);
-          }
-        })
-        .withFailureHandler(function(err) {
-          if (onError) onError(err.message || 'Server xatoligi');
-        });
-      
-      if (args && args.length > 0) {
-        runner[funcName].apply(runner, args);
-      } else {
-        runner[funcName]();
-      }
+    function renderStats(s) {
+      var c = document.getElementById('chiefStatsCards');
+      if (!c) return;
+      c.innerHTML =
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card animate-fadeInUp"><div class="stat-label">Jami</div><div class="stat-value">'+s.jami+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-jarayonda animate-fadeInUp"><div class="stat-label">Jarayonda</div><div class="stat-value">'+s.jarayonda+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-yakunlangan animate-fadeInUp"><div class="stat-label">Yakunlangan</div><div class="stat-value">'+s.yakunlangan+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-rad animate-fadeInUp"><div class="stat-label">Rad etilgan</div><div class="stat-value">'+s.radEtilgan+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-bugun animate-fadeInUp"><div class="stat-label">Bugun tugaydi</div><div class="stat-value">'+s.bugunTugaydi+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun1 animate-fadeInUp"><div class="stat-label">1 kun</div><div class="stat-value">'+s.kun1Qolgan+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun2 animate-fadeInUp"><div class="stat-label">2 kun</div><div class="stat-value">'+s.kun2Qolgan+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun3 animate-fadeInUp"><div class="stat-label">3 kun</div><div class="stat-value">'+s.kun3Qolgan+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun4 animate-fadeInUp"><div class="stat-label">4+ kun</div><div class="stat-value">'+s.kun4PlusQolgan+'</div></div></div>'+
+        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-otgan animate-fadeInUp"><div class="stat-label">Muddati o\'tgan</div><div class="stat-value">'+s.muddatiOtgan+'</div></div></div>';
     }
 
-    // ==================== RENDER FUNCTIONS ====================
-    function renderChiefStats(stats) {
-      var container = document.getElementById('chiefStatsCards');
-      if (!container) return;
-      container.innerHTML = 
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card animate-fadeInUp"><div class="stat-label">Jami arizalar</div><div class="stat-value">' + stats.jami + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-jarayonda animate-fadeInUp"><div class="stat-label">Jarayonda</div><div class="stat-value">' + stats.jarayonda + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-yakunlangan animate-fadeInUp"><div class="stat-label">Yakunlangan</div><div class="stat-value">' + stats.yakunlangan + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-rad animate-fadeInUp"><div class="stat-label">Rad etilgan</div><div class="stat-value">' + stats.radEtilgan + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-bugun animate-fadeInUp"><div class="stat-label">Bugun tugaydi</div><div class="stat-value">' + stats.bugunTugaydi + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun1 animate-fadeInUp"><div class="stat-label">1 kun qolgan</div><div class="stat-value">' + stats.kun1Qolgan + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun2 animate-fadeInUp"><div class="stat-label">2 kun qolgan</div><div class="stat-value">' + stats.kun2Qolgan + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun3 animate-fadeInUp"><div class="stat-label">3 kun qolgan</div><div class="stat-value">' + stats.kun3Qolgan + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-kun4 animate-fadeInUp"><div class="stat-label">4+ kun qolgan</div><div class="stat-value">' + stats.kun4PlusQolgan + '</div></div></div>' +
-        '<div class="col-6 col-md-4 col-lg"><div class="stat-card card-otgan animate-fadeInUp"><div class="stat-label">Muddati o\'tgan</div><div class="stat-value">' + stats.muddatiOtgan + '</div></div></div>';
-    }
-
-    function renderEngineersSummary(data) {
-      var tbody = document.getElementById('engineersSummaryBody');
-      if (!tbody) return;
-      if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Ma\'lumot yo\'q</td></tr>';
-        return;
-      }
-      var html = '';
+    function renderSummary(data) {
+      var t = document.getElementById('engineersSummaryBody');
+      if (!t) return;
+      if (!data || !data.length) { t.innerHTML = '<tr><td colspan="6" class="text-center py-3">Ma\'lumot yo\'q</td></tr>'; return; }
+      var h = '';
       for (var i = 0; i < data.length; i++) {
-        var eng = data[i];
-        html += '<tr>';
-        html += '<td><strong>' + eng.muhandis + '</strong></td>';
-        html += '<td><span class="badge bg-primary">' + eng.jarayonda + '</span></td>';
-        html += '<td><span class="badge bg-success">' + eng.yakunlangan + '</span></td>';
-        html += '<td><span class="badge bg-secondary">' + eng.radEtilgan + '</span></td>';
-        html += '<td>' + (eng.muddatiOtgan > 0 ? '<span class="badge bg-danger">' + eng.muddatiOtgan + '</span>' : '0') + '</td>';
-        html += '<td><strong>' + eng.jami + '</strong></td>';
-        html += '</tr>';
+        var e = data[i];
+        h += '<tr><td><strong>'+e.muhandis+'</strong></td><td><span class="badge bg-primary">'+e.jarayonda+'</span></td><td><span class="badge bg-success">'+e.yakunlangan+'</span></td><td><span class="badge bg-secondary">'+e.radEtilgan+'</span></td><td>'+(e.muddatiOtgan>0?'<span class="badge bg-danger">'+e.muddatiOtgan+'</span>':'0')+'</td><td><strong>'+e.jami+'</strong></td></tr>';
       }
-      tbody.innerHTML = html;
+      t.innerHTML = h;
     }
 
-    function renderMonthlyReport(data) {
-      var tbody = document.getElementById('monthlyReportBody');
-      if (!tbody) return;
-      if (!data.engineers || data.engineers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3">Bu oy uchun ma\'lumot yo\'q</td></tr>';
-        return;
-      }
-      var html = '';
+    function renderMonthly(data) {
+      var t = document.getElementById('monthlyReportBody');
+      if (!t) return;
+      if (!data.engineers || !data.engineers.length) { t.innerHTML = '<tr><td colspan="6" class="text-center py-3">Ma\'lumot yo\'q</td></tr>'; return; }
+      var h = '';
       for (var i = 0; i < data.engineers.length; i++) {
-        var eng = data.engineers[i];
-        html += '<tr><td>' + eng.muhandis + '</td><td>' + eng.kelgan + '</td><td>' + eng.yakunlangan + '</td><td>' + eng.radEtilgan + '</td><td>' + eng.jarayonda + '</td>';
-        html += '<td><div class="progress" style="height:20px;border-radius:10px"><div class="progress-bar bg-success" style="width:' + eng.foiz + '%">' + eng.foiz + '%</div></div></td></tr>';
+        var e = data.engineers[i];
+        h += '<tr><td>'+e.muhandis+'</td><td>'+e.kelgan+'</td><td>'+e.yakunlangan+'</td><td>'+e.radEtilgan+'</td><td>'+e.jarayonda+'</td><td><div class="progress" style="height:20px;border-radius:10px"><div class="progress-bar bg-success" style="width:'+e.foiz+'%">'+e.foiz+'%</div></div></td></tr>';
       }
-      html += '<tr class="table-active fw-bold"><td>JAMI</td><td>' + data.totals.kelgan + '</td><td>' + data.totals.yakunlangan + '</td><td>' + data.totals.radEtilgan + '</td><td>' + data.totals.jarayonda + '</td>';
-      html += '<td><div class="progress" style="height:20px;border-radius:10px"><div class="progress-bar bg-primary" style="width:' + data.totals.foiz + '%">' + data.totals.foiz + '%</div></div></td></tr>';
-      tbody.innerHTML = html;
+      h += '<tr class="table-active fw-bold"><td>JAMI</td><td>'+data.totals.kelgan+'</td><td>'+data.totals.yakunlangan+'</td><td>'+data.totals.radEtilgan+'</td><td>'+data.totals.jarayonda+'</td><td><div class="progress" style="height:20px;border-radius:10px"><div class="progress-bar bg-primary" style="width:'+data.totals.foiz+'%">'+data.totals.foiz+'%</div></div></td></tr>';
+      t.innerHTML = h;
     }
 
-    function renderAllArizalar(arizalar) {
-      var tbody = document.getElementById('allArizalarBody');
-      if (!tbody) return;
-      if (!arizalar || arizalar.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-3">Arizalar topilmadi</td></tr>';
-        return;
+    function renderArizalar(arr) {
+      var t = document.getElementById('allArizalarBody');
+      if (!t) return;
+      if (!arr || !arr.length) { t.innerHTML = '<tr><td colspan="10" class="text-center py-3">Topilmadi</td></tr>'; return; }
+      var h = '';
+      for (var i = 0; i < arr.length; i++) {
+        var a = arr[i];
+        h += '<tr><td><strong>'+a.arizaRaqami+'</strong></td><td>'+a.muhandis+'</td><td>'+a.kelganSana+'</td><td>'+a.obyektTuri+'</td><td>'+a.xizmatTuri+'</td><td>'+a.muddat+'</td><td>'+a.tugashSanasi+'</td><td>'+getKunBadge(a.qolganKun,a.holati)+'</td><td>'+getHolatBadge(a.holati)+'</td><td>'+(a.radSababi||'-')+'</td></tr>';
       }
-      var html = '';
-      for (var i = 0; i < arizalar.length; i++) {
-        var a = arizalar[i];
-        html += '<tr>';
-        html += '<td><strong>' + a.arizaRaqami + '</strong></td>';
-        html += '<td>' + a.muhandis + '</td>';
-        html += '<td>' + a.kelganSana + '</td>';
-        html += '<td>' + a.obyektTuri + '</td>';
-        html += '<td>' + a.xizmatTuri + '</td>';
-        html += '<td>' + a.muddat + ' kun</td>';
-        html += '<td>' + a.tugashSanasi + '</td>';
-        html += '<td>' + getKunBadge(a.qolganKun, a.holati) + '</td>';
-        html += '<td>' + getHolatBadge(a.holati) + '</td>';
-        html += '<td>' + (a.radSababi || '-') + '</td>';
-        html += '</tr>';
-      }
-      tbody.innerHTML = html;
+      t.innerHTML = h;
     }
 
+    function loadStats() { api('apiGetChiefStats', [], function(r) { if (r.success) renderStats(r.data); }); }
+    function loadSummary() { api('apiGetEngineersSummary', [], function(r) { if (r.success) renderSummary(r.data); }); }
 
-    // ==================== ACTIONS ====================
-    function loadStats() {
-      apiCall('apiGetChiefStats', [], function(result) {
-        if (result.success) renderChiefStats(result.data);
-      }, function(err) {
-        console.error('Stats xatolik:', err);
+    function loadFilter() {
+      api('apiGetXodimlar', [], function(r) {
+        if (!r.success) return;
+        var s = document.getElementById('filterMuhandis'); if (!s) return;
+        var h = '<option value="">Barchasi</option>';
+        for (var i = 0; i < r.data.length; i++) h += '<option value="'+r.data[i].fish+'">'+r.data[i].fish+'</option>';
+        s.innerHTML = h;
       });
     }
 
-    function loadSummary() {
-      apiCall('apiGetEngineersSummary', [], function(result) {
-        if (result.success) renderEngineersSummary(result.data);
-      }, function(err) {
-        console.error('Summary xatolik:', err);
-      });
+    function doMonthly() {
+      var y = parseInt(document.getElementById('reportYear').value) || new Date().getFullYear();
+      var m = parseInt(document.getElementById('reportMonth').value) || (new Date().getMonth()+1);
+      api('apiGetMonthlyReport', [y, m], function(r) { if (r.success) renderMonthly(r.data); });
     }
 
-    function loadXodimlarFilter() {
-      apiCall('apiGetXodimlar', [], function(result) {
-        if (result.success) {
-          var select = document.getElementById('filterMuhandis');
-          if (!select) return;
-          var html = '<option value="">Barchasi</option>';
-          for (var i = 0; i < result.data.length; i++) {
-            html += '<option value="' + result.data[i].fish + '">' + result.data[i].fish + '</option>';
-          }
-          select.innerHTML = html;
-        }
-      });
-    }
-
-    function loadMonthlyReport() {
-      var year = parseInt(document.getElementById('reportYear').value) || new Date().getFullYear();
-      var month = parseInt(document.getElementById('reportMonth').value) || (new Date().getMonth() + 1);
-      apiCall('apiGetMonthlyReport', [year, month], function(result) {
-        if (result.success) renderMonthlyReport(result.data);
-      }, function(err) {
-        alert('Hisobot xatoligi: ' + err);
-      });
-    }
-
-    function applyFilters() {
-      var filters = {
-        muhandis: document.getElementById('filterMuhandis').value || '',
-        holati: document.getElementById('filterHolati').value || '',
-        oy: document.getElementById('filterOy').value || '',
-        sanaFrom: document.getElementById('filterSanaFrom').value ? convertDateFormat(document.getElementById('filterSanaFrom').value) : '',
-        sanaTo: document.getElementById('filterSanaTo').value ? convertDateFormat(document.getElementById('filterSanaTo').value) : '',
-        qidiruv: document.getElementById('filterQidiruv').value || ''
+    function doFilter() {
+      var f = {
+        muhandis: document.getElementById('filterMuhandis').value,
+        holati: document.getElementById('filterHolati').value,
+        sanaFrom: convertDate(document.getElementById('filterSanaFrom').value),
+        sanaTo: convertDate(document.getElementById('filterSanaTo').value),
+        qidiruv: document.getElementById('filterQidiruv').value
       };
-      apiCall('apiGetAllArizalar', [filters], function(result) {
-        if (result.success) renderAllArizalar(result.data);
-      }, function(err) {
-        alert('Filtrlash xatoligi: ' + err);
-      });
+      api('apiGetAllArizalar', [f], function(r) { if (r.success) renderArizalar(r.data); });
     }
 
-    function clearFilters() {
+    function doClear() {
       document.getElementById('filterMuhandis').value = '';
       document.getElementById('filterHolati').value = '';
-      document.getElementById('filterOy').value = '';
       document.getElementById('filterSanaFrom').value = '';
       document.getElementById('filterSanaTo').value = '';
       document.getElementById('filterQidiruv').value = '';
-      applyFilters();
+      doFilter();
     }
 
     function loadCharts() {
-      if (typeof google === 'undefined' || typeof google.charts === 'undefined') {
-        setTimeout(loadCharts, 500);
-        return;
-      }
-      apiCall('apiGetChartsData', [], function(result) {
-        if (!result.success) return;
-        var chartData = result.data;
-        google.charts.load('current', {packages: ['corechart']});
+      if (typeof google === 'undefined' || !google.charts) { setTimeout(loadCharts, 500); return; }
+      api('apiGetChartsData', [], function(r) {
+        if (!r.success) return;
+        var cd = r.data;
+        google.charts.load('current', {packages:['corechart']});
         google.charts.setOnLoadCallback(function() {
-          // Pie Chart
-          if (chartData.pie && chartData.pie.length > 1) {
-            var pieContainer = document.getElementById('pieChart');
-            if (pieContainer) {
-              var pieTable = google.visualization.arrayToDataTable(chartData.pie);
-              var pieChart = new google.visualization.PieChart(pieContainer);
-              pieChart.draw(pieTable, {pieHole: 0.4, colors: ['#28a745','#007bff','#ffc107','#fd7e14','#dc3545','#721c24'], legend:{position:'bottom'}, chartArea:{width:'90%',height:'75%'}});
-            }
-          }
-          // Column Chart
-          if (chartData.column && chartData.column.length > 1) {
-            var colContainer = document.getElementById('columnChart');
-            if (colContainer) {
-              var colTable = google.visualization.arrayToDataTable(chartData.column);
-              var colChart = new google.visualization.ColumnChart(colContainer);
-              colChart.draw(colTable, {colors: ['#007bff','#28a745','#6c757d'], legend:{position:'bottom'}, chartArea:{width:'85%',height:'70%'}, vAxis:{minValue:0}});
-            }
-          }
-          // Line Chart
-          if (chartData.line && chartData.line.length > 1) {
-            var lineContainer = document.getElementById('lineChart');
-            if (lineContainer) {
-              var lineTable = google.visualization.arrayToDataTable(chartData.line);
-              var lineChart = new google.visualization.LineChart(lineContainer);
-              lineChart.draw(lineTable, {colors: ['#1a237e','#28a745','#dc3545'], legend:{position:'bottom'}, chartArea:{width:'85%',height:'70%'}, curveType:'function', pointSize:5});
-            }
-          }
+          try {
+            if (cd.pie && cd.pie.length > 1) { var d = google.visualization.arrayToDataTable(cd.pie); new google.visualization.PieChart(document.getElementById('pieChart')).draw(d, {pieHole:0.4,colors:['#28a745','#007bff','#ffc107','#fd7e14','#dc3545','#721c24'],legend:{position:'bottom'},chartArea:{width:'90%',height:'75%'}}); }
+            if (cd.column && cd.column.length > 1) { var d2 = google.visualization.arrayToDataTable(cd.column); new google.visualization.ColumnChart(document.getElementById('columnChart')).draw(d2, {colors:['#007bff','#28a745','#6c757d'],legend:{position:'bottom'},chartArea:{width:'85%',height:'70%'},vAxis:{minValue:0}}); }
+            if (cd.line && cd.line.length > 1) { var d3 = google.visualization.arrayToDataTable(cd.line); new google.visualization.LineChart(document.getElementById('lineChart')).draw(d3, {colors:['#1a237e','#28a745','#dc3545'],legend:{position:'bottom'},chartArea:{width:'85%',height:'70%'},curveType:'function',pointSize:5}); }
+          } catch(e) { console.error(e); }
         });
       });
     }
 
-    // ==================== INIT ====================
-    function initReportSelects() {
-      var yearSelect = document.getElementById('reportYear');
-      var currentYear = new Date().getFullYear();
-      var currentMonth = new Date().getMonth() + 1;
-      if (yearSelect) {
-        for (var y = currentYear - 2; y <= currentYear + 1; y++) {
-          var opt = document.createElement('option');
-          opt.value = y;
-          opt.textContent = y;
-          if (y === currentYear) opt.selected = true;
-          yearSelect.appendChild(opt);
-        }
-      }
-      var monthSelect = document.getElementById('reportMonth');
-      if (monthSelect) monthSelect.value = currentMonth;
-    }
-
-    function initPage() {
-      // Back button
-      var btnBack = document.getElementById('btnBack');
-      if (btnBack) btnBack.href = getMainUrl();
-
-      // Event listeners
+    function init() {
+      document.getElementById('btnBack').href = getMainUrl();
       document.getElementById('btnRefresh').onclick = function() { loadStats(); loadSummary(); };
-      document.getElementById('btnMonthly').onclick = loadMonthlyReport;
-      document.getElementById('btnFilter').onclick = applyFilters;
-      document.getElementById('btnClear').onclick = clearFilters;
+      document.getElementById('btnMonthly').onclick = doMonthly;
+      document.getElementById('btnFilter').onclick = doFilter;
+      document.getElementById('btnClear').onclick = doClear;
 
-      // Selectlarni to'ldirish
-      initReportSelects();
-      loadXodimlarFilter();
+      var ys = document.getElementById('reportYear'), cy = new Date().getFullYear();
+      for (var y = cy-2; y <= cy+1; y++) { var o = document.createElement('option'); o.value = y; o.text = y; if (y===cy) o.selected=true; ys.appendChild(o); }
+      document.getElementById('reportMonth').value = new Date().getMonth()+1;
 
-      // Ma'lumotlarni yuklash
+      loadFilter();
       loadStats();
       loadSummary();
-
-      // Charts (kechiktirilgan)
-      setTimeout(loadCharts, 300);
+      setTimeout(loadCharts, 500);
     }
 
-    // DOM tayyor bo'lganda ishga tushirish
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initPage);
-    } else {
-      initPage();
-    }
-
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
   })();
   </script>
-
 </body>
 </html>
