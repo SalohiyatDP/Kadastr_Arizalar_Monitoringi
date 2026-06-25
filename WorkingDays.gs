@@ -6,17 +6,26 @@
  * ish kunlarini hisoblash funksiyalari.
  */
 
+// Bayram kunlari keshi (bir ijro davomida sheet faqat 1 marta o'qiladi)
+var _bayramKunlariCache = null;
+
 /**
- * Bayram kunlari ro'yxatini Sheetdan o'qish
+ * Bayram kunlari ro'yxatini Sheetdan o'qish (keshlangan)
  * @returns {Array<number>} Bayram kunlari timestamps massivi
  */
 function getBayramKunlari() {
+  // Agar avval o'qilgan bo'lsa - keshdan qaytarish
+  if (_bayramKunlariCache !== null) {
+    return _bayramKunlariCache;
+  }
+  
   try {
     const ss = getSpreadsheet();
     const sheet = ss.getSheetByName(getSheetNames().BAYRAM_KUNLARI);
     
     if (!sheet || sheet.getLastRow() <= 1) {
-      return [];
+      _bayramKunlariCache = [];
+      return _bayramKunlariCache;
     }
     
     const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
@@ -31,11 +40,21 @@ function getBayramKunlari() {
       }
     }
     
+    _bayramKunlariCache = holidays;
     return holidays;
   } catch (error) {
     Logger.log('getBayramKunlari xatosi: ' + error.message);
-    return [];
+    _bayramKunlariCache = [];
+    return _bayramKunlariCache;
   }
+}
+
+/**
+ * Bayram kunlari keshini tozalash
+ * (sheet o'zgartirilganda kerak bo'lishi mumkin)
+ */
+function clearBayramKunlariCache() {
+  _bayramKunlariCache = null;
 }
 
 /**

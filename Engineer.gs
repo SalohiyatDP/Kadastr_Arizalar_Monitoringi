@@ -233,7 +233,6 @@ function getEngineerArizalar(muhandis) {
     const cols = getArizalarColumns();
     const holatlar = getHolatlar();
     const today = getToday();
-    const holidays = getBayramKunlari();
     const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 15).getValues();
     const arizalar = [];
     
@@ -304,7 +303,6 @@ function getEngineerStats(muhandis) {
     const cols = getArizalarColumns();
     const holatlar = getHolatlar();
     const today = getToday();
-    const holidays = getBayramKunlari();
     const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 15).getValues();
     
     for (let i = 0; i < data.length; i++) {
