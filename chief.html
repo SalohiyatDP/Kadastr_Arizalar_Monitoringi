@@ -260,13 +260,9 @@
         var e = data[i];
         var bugun = e.bugunTugaydi || 0;
         var otgan = e.muddatiOtgan || 0;
-        var bugunCell = bugun > 0 ? '<span class="badge bg-danger">'+bugun+'</span>' : '0';
-        var otganCell = otgan > 0 ? '<span class="badge" style="background:#721c24;color:#fff">'+otgan+'</span>' : '0';
-        var bugunClass = bugun === 0 ? ' class="cell-zero-warn"' : '';
-        var otganClass = otgan === 0 ? ' class="cell-zero-warn"' : '';
         h += '<tr><td><strong>'+e.muhandis+'</strong></td>'+
-          '<td'+bugunClass+'>'+bugunCell+'</td>'+
-          '<td'+otganClass+'>'+otganCell+'</td>'+
+          '<td><span class="badge bg-danger">'+bugun+'</span></td>'+
+          '<td><span class="badge" style="background:#721c24;color:#fff">'+otgan+'</span></td>'+
           '<td><span class="badge bg-primary">'+e.jarayonda+'</span></td>'+
           '<td><span class="badge bg-success">'+e.yakunlangan+'</span></td>'+
           '<td><span class="badge bg-secondary">'+e.radEtilgan+'</span></td>'+
