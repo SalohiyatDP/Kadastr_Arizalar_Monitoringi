@@ -195,6 +195,31 @@ function apiGetOverdueArizalar() {
 }
 
 /**
+ * Arxiv arizalarini olish (filtrlar bilan)
+ * @param {Object} filters - Filtrlar
+ * @returns {string} JSON response
+ */
+function apiGetArxivArizalar(filters) {
+  return JSON.stringify(getArxivArizalar(filters));
+}
+
+/**
+ * Arxiv statistikasi
+ * @returns {string} JSON response
+ */
+function apiGetArxivStats() {
+  return JSON.stringify(getArxivStats());
+}
+
+/**
+ * Qo'lda arxivlash (admin uchun)
+ * @returns {string} JSON response
+ */
+function apiArchiveNow() {
+  return JSON.stringify(archiveCompletedArizalar());
+}
+
+/**
  * Konfiguratsiya ma'lumotlarini frontend ga uzatish
  * @returns {string} JSON response
  */

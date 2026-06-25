@@ -34,6 +34,8 @@
     .data-table thead th{background:#f8f9fa;border-bottom:2px solid #dee2e6;padding:0.75rem;text-align:left;font-weight:600;font-size:0.8rem;text-transform:uppercase;color:#555;white-space:nowrap}
     .data-table tbody td{padding:0.7rem 0.75rem;border-bottom:1px solid #eee;vertical-align:middle}
     .data-table tbody tr:hover{background:#f8f9ff}
+    .row-bugun-tugaydi{background:#fff0f0 !important}
+    .row-bugun-tugaydi:hover{background:#ffe5e5 !important}
     .badge-holat{padding:0.35rem 0.75rem;border-radius:20px;font-size:0.75rem;font-weight:600;display:inline-block}
     .badge-jarayonda{background:#e3f2fd;color:#1565c0}
     .badge-yakunlangan{background:#e8f5e9;color:#2e7d32}
@@ -145,6 +147,35 @@
         <div class="col-12"><div class="chart-container"><div class="chart-title">Oylik statistika</div><div id="lineChart" style="width:100%;height:350px"></div></div></div>
       </div>
     </section>
+
+    <!-- ARXIV BO'LIMI -->
+    <section class="mt-4">
+      <div class="table-container">
+        <div class="table-header d-flex justify-content-between align-items-center">
+          <span>&#128451; Arxiv arizalar</span>
+          <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-light text-dark" id="arxivStatsLabel">Jami: 0</span>
+            <button class="btn btn-sm btn-warning" id="btnArchiveNow" title="Hozir arxivlash">&#9881; Arxivlash</button>
+            <button class="btn btn-sm btn-light" id="btnArxivRefresh">&#128260;</button>
+          </div>
+        </div>
+        <div class="p-3">
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-3"><label class="form-label small">Muhandis</label><select class="form-select form-select-sm" id="arxivFilterMuhandis"><option value="">Barchasi</option></select></div>
+            <div class="col-md-2"><label class="form-label small">Holati</label><select class="form-select form-select-sm" id="arxivFilterHolati"><option value="">Barchasi</option><option value="Yakunlandi">Yakunlandi</option><option value="Rad etildi">Rad etildi</option></select></div>
+            <div class="col-md-3"><label class="form-label small">Qidiruv</label><input type="text" class="form-control form-control-sm" id="arxivFilterQidiruv" placeholder="Ariza raqami yoki muhandis"></div>
+            <div class="col-md-2 d-flex gap-1"><button class="btn btn-primary btn-sm" id="btnArxivFilter">Filtrlash</button><button class="btn btn-outline-secondary btn-sm" id="btnArxivClear">Tozalash</button></div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead><tr><th>Ariza raqami</th><th>Muhandis</th><th>Kelgan sana</th><th>Obyekt</th><th>Xizmat</th><th>Muddat</th><th>Holati</th><th>Yakunlangan/Rad</th><th>Arxivlangan</th></tr></thead>
+            <tbody id="arxivTableBody"><tr><td colspan="9" class="text-center py-3 text-muted">Arxiv yuklanmoqda...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -162,7 +193,8 @@
       else if (n === 1) c = 'badge-kun-1';
       else if (n === 2) c = 'badge-kun-2';
       else if (n === 3) c = 'badge-kun-3';
-      return '<span class="badge-kun ' + c + '">' + n + ' kun</span>';
+      var text = (n === 0) ? 'Muddati bugun' : n + ' kun';
+      return '<span class="badge-kun ' + c + '">' + text + '</span>';
     }
 
     function getHolatBadge(h) {
@@ -233,7 +265,8 @@
       var h = '';
       for (var i = 0; i < arr.length; i++) {
         var a = arr[i];
-        h += '<tr><td><strong>'+a.arizaRaqami+'</strong></td><td>'+a.muhandis+'</td><td>'+a.kelganSana+'</td><td>'+a.obyektTuri+'</td><td>'+a.xizmatTuri+'</td><td>'+a.muddat+'</td><td>'+a.tugashSanasi+'</td><td>'+getKunBadge(a.qolganKun,a.holati)+'</td><td>'+getHolatBadge(a.holati)+'</td><td>'+(a.radSababi||'-')+'</td></tr>';
+        var rc = (a.holati === 'Jarayonda' && parseInt(a.qolganKun) === 0) ? ' class="row-bugun-tugaydi"' : '';
+        h += '<tr'+rc+'><td><strong>'+a.arizaRaqami+'</strong></td><td>'+a.muhandis+'</td><td>'+a.kelganSana+'</td><td>'+a.obyektTuri+'</td><td>'+a.xizmatTuri+'</td><td>'+a.muddat+'</td><td>'+a.tugashSanasi+'</td><td>'+getKunBadge(a.qolganKun,a.holati)+'</td><td>'+getHolatBadge(a.holati)+'</td><td>'+(a.radSababi||'-')+'</td></tr>';
       }
       t.innerHTML = h;
     }
@@ -293,6 +326,76 @@
       });
     }
 
+    // ==================== ARXIV ====================
+    function loadArxiv(filters) {
+      api('apiGetArxivArizalar', [filters || {}], function(r) {
+        if (r.success) renderArxiv(r.data);
+      });
+    }
+
+    function loadArxivStats() {
+      api('apiGetArxivStats', [], function(r) {
+        if (r.success) {
+          var lbl = document.getElementById('arxivStatsLabel');
+          if (lbl) lbl.textContent = 'Jami: ' + r.data.jami + ' | Yakunlangan: ' + r.data.yakunlangan + ' | Rad: ' + r.data.radEtilgan;
+        }
+      });
+    }
+
+    function renderArxiv(arr) {
+      var t = document.getElementById('arxivTableBody');
+      if (!t) return;
+      if (!arr || !arr.length) { t.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">Arxiv bo\'sh</td></tr>'; return; }
+      var h = '';
+      for (var i = 0; i < arr.length; i++) {
+        var a = arr[i];
+        var dateTxt = a.holati === 'Yakunlandi' ? (a.yakunlanganSana || '-') : (a.radEtilganSana || '-');
+        h += '<tr><td><strong>'+a.arizaRaqami+'</strong></td><td>'+a.muhandis+'</td><td>'+a.kelganSana+'</td><td>'+a.obyektTuri+'</td><td>'+a.xizmatTuri+'</td><td>'+a.muddat+'</td><td>'+getHolatBadge(a.holati)+'</td><td>'+dateTxt+'</td><td>'+(a.arxivlanganSana||'-')+'</td></tr>';
+      }
+      t.innerHTML = h;
+    }
+
+    function doArxivFilter() {
+      var f = {
+        muhandis: document.getElementById('arxivFilterMuhandis').value,
+        holati: document.getElementById('arxivFilterHolati').value,
+        qidiruv: document.getElementById('arxivFilterQidiruv').value
+      };
+      loadArxiv(f);
+    }
+
+    function doClearArxiv() {
+      document.getElementById('arxivFilterMuhandis').value = '';
+      document.getElementById('arxivFilterHolati').value = '';
+      document.getElementById('arxivFilterQidiruv').value = '';
+      loadArxiv({});
+    }
+
+    function doArchiveNow() {
+      if (!confirm('Yakunlangan va rad etilgan barcha arizalarni hozir arxivga ko\'chirishni tasdiqlaysizmi?')) return;
+      api('apiArchiveNow', [], function(r) {
+        if (r.success) {
+          alert(r.message);
+          loadStats();
+          loadSummary();
+          loadArxiv({});
+          loadArxivStats();
+        } else {
+          alert('Xatolik: ' + r.message);
+        }
+      }, function(e) { alert('Xatolik: ' + e); });
+    }
+
+    function loadArxivFilter() {
+      api('apiGetXodimlar', [], function(r) {
+        if (!r.success) return;
+        var s = document.getElementById('arxivFilterMuhandis'); if (!s) return;
+        var h = '<option value="">Barchasi</option>';
+        for (var i = 0; i < r.data.length; i++) h += '<option value="'+r.data[i].fish+'">'+r.data[i].fish+'</option>';
+        s.innerHTML = h;
+      });
+    }
+
     function init() {
       document.getElementById('btnBack').href = getMainUrl();
       document.getElementById('btnRefresh').onclick = function() { loadStats(); loadSummary(); };
@@ -300,13 +403,22 @@
       document.getElementById('btnFilter').onclick = doFilter;
       document.getElementById('btnClear').onclick = doClear;
 
+      // Arxiv tugmalari
+      document.getElementById('btnArxivFilter').onclick = doArxivFilter;
+      document.getElementById('btnArxivClear').onclick = doClearArxiv;
+      document.getElementById('btnArxivRefresh').onclick = function() { loadArxiv({}); loadArxivStats(); };
+      document.getElementById('btnArchiveNow').onclick = doArchiveNow;
+
       var ys = document.getElementById('reportYear'), cy = new Date().getFullYear();
       for (var y = cy-2; y <= cy+1; y++) { var o = document.createElement('option'); o.value = y; o.text = y; if (y===cy) o.selected=true; ys.appendChild(o); }
       document.getElementById('reportMonth').value = new Date().getMonth()+1;
 
       loadFilter();
+      loadArxivFilter();
       loadStats();
       loadSummary();
+      loadArxiv({});
+      loadArxivStats();
       setTimeout(loadCharts, 500);
     }
 

@@ -34,7 +34,8 @@ function getSheetNames() {
     SOZLAMALAR: 'Sozlamalar',
     BAYRAM_KUNLARI: 'Bayram kunlari',
     LOG: 'Log',
-    STATISTIKA: 'Statistika'
+    STATISTIKA: 'Statistika',
+    ARXIV: 'Arxiv'
   };
 }
 

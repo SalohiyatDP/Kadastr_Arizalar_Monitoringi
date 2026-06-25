@@ -296,7 +296,11 @@ const UI = (() => {
   const getKunBadge = (qolganKun, holati) => {
     if (holati !== 'Jarayonda') return '-';
     const cls = getKunBadgeClass(qolganKun, holati);
-    const text = qolganKun < 0 ? qolganKun + ' kun' : qolganKun + ' kun';
+    const kun = parseInt(qolganKun);
+    let text;
+    if (kun === 0) text = 'Muddati bugun';
+    else if (kun < 0) text = kun + ' kun';
+    else text = kun + ' kun';
     return `<span class="badge-kun ${cls}">${text}</span>`;
   };
   
@@ -730,8 +734,9 @@ const EngineerPage = (() => {
     
     let html = '';
     sorted.forEach((ariza) => {
+      const rowClass = (ariza.holati === 'Jarayonda' && parseInt(ariza.qolganKun) === 0) ? 'row-bugun-tugaydi' : '';
       html += `
-        <tr class="animate-fadeIn">
+        <tr class="animate-fadeIn ${rowClass}">
           <td><strong>${ariza.arizaRaqami}</strong></td>
           <td>${ariza.kelganSana}</td>
           <td>${ariza.obyektTuri}</td>
